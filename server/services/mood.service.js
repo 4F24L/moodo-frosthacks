@@ -23,10 +23,10 @@ export const generateMoodScore = (features) => {
 
   const moodScore = round(rawScore * 10, 1);
 
-  // Determine label
-  let label = "stable";
-  if (moodScore < 3.5) label = "low";
-  else if (moodScore > 6.5) label = "high";
+  // Determine label to match AI service format
+  let label = "Medium";
+  if (moodScore < 3.5) label = "Low";
+  else if (moodScore > 6.5) label = "High";
 
   return {
     moodScore,

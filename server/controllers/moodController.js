@@ -1,17 +1,8 @@
-import fs from "fs";
 import * as moodService from "../services/mood.service.js";
 import * as trendService from "../services/trend.service.js";
 import * as alertService from "../services/alert.service.js";
 import { analyzeSentiment } from "../services/sentiment.service.js";
-import { analyzeVoice, analyzeVoiceBuffer } from "../services/aiService.js";
-
-const safeDeleteFile = (filePath) => {
-  try {
-    if (filePath && fs.existsSync(filePath)) fs.unlinkSync(filePath);
-  } catch {
-    // non-critical
-  }
-};
+import { analyzeVoiceBuffer } from "../services/aiService.js";
 
 /**
  * POST /mood/analyze
@@ -107,41 +98,6 @@ export const processAudio = async (req, res, next) => {
       },
     });
   } catch (err) {
-    next(err);
-  }
-};
-
-/**
- * POST /mood/voice
- * Upload and analyze voice file (legacy endpoint)
- */
-export const uploadVoiceMood = async (req, res, next) => {
-  const filePath = req.file?.path;
-
-  try {
-    if (!req.file) {
-      return res.status(400).json({ success: false, message: "Audio file is required" });
-    }
-
-    const result = await analyzeVoice(filePath);
-
-    const moodEntry = await moodService.createMoodEntry(req.user._id, result.features);
-
-    safeDeleteFile(filePath);
-
-    // Check for alerts
-    const entries = await moodService.getMoodHistory(req.user._id, 7, 10);
-    const alert = await alertService.createAlertIfNeeded(req.user._id, entries);
-
-    res.status(201).json({
-      success: true,
-      data: {
-        mood: moodEntry,
-        alert: alert ? { id: alert._id, type: alert.type, message: alert.message } : null,
-      },
-    });
-  } catch (err) {
-    safeDeleteFile(filePath);
     next(err);
   }
 };

@@ -1,7 +1,8 @@
 # MOODO - FrostHacks
 
-Backend API - https://moodo-frosthacks-i1tq.onrender.com
-AI API - https://moodo-frosthacks.onrender.com/
+- Frontend - https://moodo-frosthacks.vercel.app/
+- Backend API - https://moodo-frosthacks-i1tq.onrender.com
+- AI API - https://moodo-frosthacks.onrender.com/
 
 ## 🎯 Privacy-First Audio Mood Tracking
 

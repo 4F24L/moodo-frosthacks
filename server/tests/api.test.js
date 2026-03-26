@@ -151,6 +151,18 @@ async function testAnalyzeMoodInvalidFeatures() {
   }
 }
 
+async function testProcessAudioMissingFile() {
+  console.log("\n🎤 TESTING PROCESS AUDIO");
+  try {
+    const res = await api.post("/mood/process-audio", {});
+    assert(res.status === 400, `Expected 400, got ${res.status}`);
+    assert(res.data.success === false, "Should indicate failure");
+    logTest("Process Audio (Missing File)", true, "Correctly rejected request without audio file");
+  } catch (err) {
+    logTest("Process Audio (Missing File)", false, err.message);
+  }
+}
+
 // ============================================================================
 // SENTIMENT ANALYSIS TESTS
 // ============================================================================
@@ -457,6 +469,7 @@ async function runAllTests() {
     await testAnalyzeMood();
     await testAnalyzeMoodWithText();
     await testAnalyzeMoodInvalidFeatures();
+    await testProcessAudioMissingFile();
 
     // Sentiment tests
     await testSentimentPositive();
