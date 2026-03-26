@@ -1,0 +1,5 @@
+{
+  "name": "MOODO: Emotional Trend Monitor",
+  "description": "A voice-based emotional monitoring system that extracts features, performs sentiment analysis, and tracks mood trends over time.",
+  "requestFramePermissions": ["microphone"]
+}
