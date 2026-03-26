@@ -4,10 +4,26 @@ import numpy as np
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 import os
 from datetime import datetime
+import speech_recognition as sr
 
 app = Flask(__name__)
 
 analyzer = SentimentIntensityAnalyzer()
+
+
+# 🎙️ Speech-to-Text
+def speech_to_text(file_path):
+    recognizer = sr.Recognizer()
+
+    try:
+        with sr.AudioFile(file_path) as source:
+            audio = recognizer.record(source)
+
+        text = recognizer.recognize_google(audio)
+    except:
+        text = ""
+
+    return text
 
 
 # 🎤 Feature Extraction
@@ -18,10 +34,9 @@ def extract_features(file_path):
     pitches, magnitudes = librosa.piptrack(y=y, sr=sr)
     pitch_values = pitches[pitches > 50]
     pitch_values = pitch_values[pitch_values < 400]
-
     pitch = float(np.mean(pitch_values)) if pitch_values.size > 0 else 0.0
 
-    # 🔹 Jitter (variation in pitch)
+    # 🔹 Jitter
     if pitch_values.size > 1:
         jitter = float(np.mean(np.abs(np.diff(pitch_values))))
     else:
@@ -31,15 +46,15 @@ def extract_features(file_path):
     rms = librosa.feature.rms(y=y)
     energy = float(np.mean(rms))
 
-    # 🔹 Tempo (speech rate proxy)
+    # 🔹 Tempo
     duration = librosa.get_duration(y=y, sr=sr)
     tempo = float(60 / duration) if duration > 0 else 0.0
 
-    # 🔹 Soft constraints (avoid flattening)
+    # 🔹 Constraints
     pitch = max(pitch, 50)
     tempo = min(max(tempo, 80), 200)
 
-    # 🔹 Round for stability
+    # 🔹 Round
     pitch = round(pitch, 2)
     energy = round(energy, 4)
     tempo = round(tempo, 2)
@@ -53,7 +68,7 @@ def extract_features(file_path):
     }
 
 
-# 🧠 Mood Score Calculation
+# 🧠 Mood Score
 def calculate_mood(features, sentiment_score):
     pitch = features["pitch"]
     energy = features["energy"]
@@ -61,7 +76,6 @@ def calculate_mood(features, sentiment_score):
     jitter = features["jitter"]
     sentiment_score = float(sentiment_score)
 
-    # Normalize (sensitive)
     pitch_score = min(pitch / 300, 1)
     energy_score = min(energy / 0.1, 1)
     tempo_score = min(tempo / 200, 1)
@@ -87,6 +101,8 @@ def generate_insight(features, sentiment_score):
 
     if jitter > 40:
         return "High voice instability detected, possible stress or nervousness"
+    elif pitch > 250 and energy > 0.07 and jitter < 10:
+        return "Confident and expressive speech detected"
     elif pitch > 250 and energy > 0.07:
         return "High energy and pitch suggest excitement or stress"
     elif tempo > 150:
@@ -105,33 +121,35 @@ def generate_insight(features, sentiment_score):
 @app.route('/analyze', methods=['POST'])
 def analyze():
     try:
-        # ✅ Validate input
         if 'audio' not in request.files:
             return jsonify({"error": "No audio file provided"}), 400
 
         audio_file = request.files['audio']
 
-        # Save temp file
         file_path = "temp.wav"
         audio_file.save(file_path)
 
-        # 🎤 Extract features
+        # 🎤 Features
         features = extract_features(file_path)
 
-        # 📝 Optional text
-        text = request.form.get("text", "")
+        # 🎙️ Speech-to-text
+        text = speech_to_text(file_path)
+
+        # fallback if STT fails
+        if not text:
+            text = request.form.get("text", "")
 
         # 🧠 Sentiment
         sentiment = analyzer.polarity_scores(text)
         sentiment_score = float(sentiment['compound'])
 
-        # 🧠 Mood Score
+        # 🧠 Mood
         mood_score = calculate_mood(features, sentiment_score)
 
-        # 🏷️ Mood Label
+        # 🏷️ Label
         if mood_score < 0.3:
             mood_label = "Low"
-        elif mood_score < 0.6:
+        elif mood_score < 0.65:
             mood_label = "Medium"
         else:
             mood_label = "High"
@@ -139,15 +157,15 @@ def analyze():
         # 💡 Insight
         insight = generate_insight(features, sentiment_score)
 
-        # 🧠 Confidence Score
+        # 🧠 Confidence
         confidence = round(1 - (features["jitter"] / 100), 2)
 
-        # 🧹 Cleanup
+        # Cleanup
         if os.path.exists(file_path):
             os.remove(file_path)
 
-        # 📦 Final Response (LOCKED FORMAT)
         return jsonify({
+            "text": text,
             "mood_score": mood_score,
             "normalized_score": round((mood_score * 2) - 1, 2),
             "mood_label": mood_label,
@@ -162,7 +180,7 @@ def analyze():
         return jsonify({"error": str(e)}), 500
 
 
-# 🚀 Run Server
+# 🚀 Run Server (Render Compatible)
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5001))
     app.run(host="0.0.0.0", port=port)

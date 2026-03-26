@@ -31,6 +31,14 @@ export const moodAnalyzeSchema = z.object({
 });
 
 /**
+ * Validate audio processing input
+ * Privacy: audio is processed and immediately discarded
+ */
+export const audioProcessSchema = z.object({
+  text: z.string().optional(),
+});
+
+/**
  * Validate dashboard query params
  */
 export const dashboardQuerySchema = z.object({

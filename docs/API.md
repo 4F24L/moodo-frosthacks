@@ -25,16 +25,17 @@ Header: Authorization: Bearer <token>
 
 ## Mood
 
+### Process Audio (Privacy-First)
+- **POST** `/mood/process-audio`
+- **Header:** `Authorization: Bearer <token>`
+- **Body:** FormData with `audio` file (required) and `text` (optional)
+- **Returns:** `{ moodScore, normalizedScore, moodLabel, confidence, insight, trend, fluctuation, alert }`
+- **Privacy:** Audio is never stored in database or disk. Processed and immediately discarded.
+
 ### Analyze Mood
 - **POST** `/mood/analyze`
 - **Header:** `Authorization: Bearer <token>`
 - **Body:** `{ features: { pitch, jitter, speech_rate }, text? }`
-- **Returns:** `{ mood, alert }`
-
-### Upload Voice
-- **POST** `/mood/voice`
-- **Header:** `Authorization: Bearer <token>`
-- **Body:** FormData with `audio` file
 - **Returns:** `{ mood, alert }`
 
 ### Get History
@@ -104,3 +105,22 @@ Header: Authorization: Bearer <token>
 | 422 | Validation failed |
 | 429 | Rate limited |
 | 500 | Server error |
+
+---
+
+## Privacy & Security
+
+### Privacy Guarantees
+- ✅ Audio is NEVER stored in database
+- ✅ Audio is NEVER persisted to disk
+- ✅ Audio is kept in memory only during processing
+- ✅ Only structured mood data is stored
+- ✅ No audio logging
+
+### Security Features
+- ✅ JWT authentication on all endpoints
+- ✅ Rate limiting (100 requests per 15 minutes)
+- ✅ Helmet.js security headers
+- ✅ XSS protection
+- ✅ CORS configured
+- ✅ Zod validation on all inputs

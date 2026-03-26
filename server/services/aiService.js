@@ -4,7 +4,11 @@ import FormData from "form-data";
 
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL;
 
-// Maps the Python /analyze response to a normalized shape
+/**
+ * Maps the Python /analyze response to a normalized shape
+ * @param {object} data - Raw response from AI service
+ * @returns {object} Normalized mood analysis result
+ */
 const mapAIResponse = (data) => {
   const compound = data.sentiment?.compound ?? 0;
   const sentimentLabel =
@@ -23,10 +27,36 @@ const mapAIResponse = (data) => {
   };
 };
 
-// Sends audio file to Python /analyze and returns mapped result
+/**
+ * Sends audio file to Python /analyze and returns mapped result
+ * Privacy: audio is processed and immediately discarded
+ * @param {string} filePath - Path to audio file
+ * @param {string} text - Optional text to include in analysis
+ * @returns {object} Normalized mood analysis result
+ */
 export const analyzeVoice = async (filePath, text = "") => {
   const form = new FormData();
   form.append("audio", fs.createReadStream(filePath));
+  if (text) form.append("text", text);
+
+  const { data } = await axios.post(`${AI_SERVICE_URL}/analyze`, form, {
+    headers: form.getHeaders(),
+  });
+
+  return mapAIResponse(data);
+};
+
+/**
+ * Sends audio buffer to Python /analyze and returns mapped result
+ * Privacy: audio is processed and immediately discarded
+ * @param {Buffer} audioBuffer - Audio file buffer
+ * @param {string} filename - Original filename for MIME type detection
+ * @param {string} text - Optional text to include in analysis
+ * @returns {object} Normalized mood analysis result
+ */
+export const analyzeVoiceBuffer = async (audioBuffer, filename, text = "") => {
+  const form = new FormData();
+  form.append("audio", audioBuffer, filename);
   if (text) form.append("text", text);
 
   const { data } = await axios.post(`${AI_SERVICE_URL}/analyze`, form, {

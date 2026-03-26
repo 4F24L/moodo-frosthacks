@@ -27,7 +27,7 @@ const moodSchema = new mongoose.Schema(
     },
     moodLabel: {
       type: String,
-      enum: ["low", "stable", "high"],
+      enum: ["Low", "Medium", "High"],
       default: null,
     },
     insight: {

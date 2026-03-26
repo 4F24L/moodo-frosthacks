@@ -1,18 +1,16 @@
-# 🧠 AI Voice Mood Analysis Service
+# 🧠 AI Voice Mood Analysis Service (Updated)
 
-This module is the **AI engine** of our hackathon project. It analyzes user voice input to extract acoustic features and generate a **mood score**, **insight**, and **confidence level**.
+This module is the **AI engine** of our hackathon project. It processes user voice input to extract acoustic features, convert speech to text, analyze sentiment, and generate a **mood score**, **insight**, and **confidence level**.
 
 ---
 
 # 🚀 Overview
 
-The AI service processes audio recordings and performs:
+The AI service performs the following pipeline:
 
-* 🎤 **Voice Feature Extraction** (Pitch, Energy, Tempo, Jitter)
-* 🧠 **Mood Score Calculation**
-* 💬 **Sentiment Analysis (VADER)**
-* 💡 **Insight Generation**
-* 📊 **Confidence Estimation**
+```text
+Audio 🎤 → Feature Extraction → Speech-to-Text → Sentiment Analysis → Mood Score → Insight
+```
 
 ---
 
@@ -22,6 +20,7 @@ The AI service processes audio recordings and performs:
 * **Flask** (API server)
 * **Librosa** (audio processing)
 * **NumPy**
+* **SpeechRecognition** (speech-to-text)
 * **NLTK / VADER** (sentiment analysis)
 
 ---
@@ -29,7 +28,7 @@ The AI service processes audio recordings and performs:
 # 📁 Project Structure
 
 ```
-ai-service/
+ai-services/
 │
 ├── app.py
 ├── requirements.txt
@@ -44,7 +43,7 @@ ai-service/
 ## 1. Navigate to AI folder
 
 ```bash
-cd ai-service
+cd ai-services
 ```
 
 ## 2. Create Virtual Environment
@@ -77,7 +76,15 @@ pip install -r requirements.txt
 
 ---
 
-## 5. Download VADER Data
+## 5. Install Speech-to-Text Dependencies
+
+```bash
+pip install SpeechRecognition pydub
+```
+
+---
+
+## 6. Download VADER Data
 
 ```python
 import nltk
@@ -86,7 +93,7 @@ nltk.download('vader_lexicon')
 
 ---
 
-## 6. Run Server
+## 7. Run Server
 
 ```bash
 python app.py
@@ -106,10 +113,10 @@ http://localhost:5001
 
 ### 🔹 Request (form-data)
 
-| Key   | Type | Description                     |
-| ----- | ---- | ------------------------------- |
-| audio | File | `.wav` audio file               |
-| text  | Text | (optional) speech-to-text input |
+| Key   | Type | Description                  |
+| ----- | ---- | ---------------------------- |
+| audio | File | `.wav` audio file (required) |
+| text  | Text | optional fallback text       |
 
 ---
 
@@ -117,6 +124,7 @@ http://localhost:5001
 
 ```json
 {
+  "text": "I feel stressed today",
   "mood_score": 0.52,
   "normalized_score": 0.04,
   "mood_label": "Medium",
@@ -129,7 +137,10 @@ http://localhost:5001
     "jitter": 20
   },
   "sentiment": {
-    "compound": -0.4
+    "compound": -0.4,
+    "neg": 0.3,
+    "neu": 0.5,
+    "pos": 0.2
   },
   "timestamp": "2026-03-26T12:00:00.000Z"
 }
@@ -139,45 +150,108 @@ http://localhost:5001
 
 # 🧠 Feature Explanation
 
-| Feature    | Description                      |
-| ---------- | -------------------------------- |
-| **Pitch**  | Frequency of voice (tone)        |
-| **Energy** | Loudness / intensity             |
-| **Tempo**  | Speaking speed                   |
-| **Jitter** | Variation in pitch (instability) |
+| Feature    | Description                          |
+| ---------- | ------------------------------------ |
+| **Pitch**  | Voice frequency (tone)               |
+| **Energy** | Loudness / intensity                 |
+| **Tempo**  | Speaking speed                       |
+| **Jitter** | Variation in pitch (voice stability) |
+
+---
+
+# 🎙️ Speech-to-Text (Task 5)
+
+* Converts audio input into text using **Google Speech Recognition**
+* Works best with:
+
+  * Clear speech
+  * Low background noise
+  * 3–10 seconds audio
+
+### Fallback Mechanism
+
+If speech recognition fails:
+
+```text
+Uses manually provided "text" field from request
+```
+
+---
+
+# 💬 Sentiment Analysis (VADER)
+
+We use VADER to analyze emotional tone of transcribed text.
+
+### Output Fields
+
+| Field    | Meaning                      |
+| -------- | ---------------------------- |
+| compound | Overall sentiment (-1 to +1) |
+| pos      | Positive score               |
+| neg      | Negative score               |
+| neu      | Neutral score                |
+
+---
+
+## ⚠️ Important Note
+
+* Informational speech → Neutral sentiment
+* Emotional words required for positive/negative detection
+
+### Examples:
+
+| Input             | Result   |
+| ----------------- | -------- |
+| "I feel stressed" | Negative |
+| "I am happy"      | Positive |
+| "I am studying"   | Neutral  |
 
 ---
 
 # 📊 Mood Score Logic
 
-The mood score is computed using a weighted combination of:
+Mood score is calculated using:
 
-* Acoustic features (pitch, energy, tempo, jitter)
-* Sentiment score (VADER)
+* Pitch
+* Energy
+* Tempo
+* Jitter
+* Sentiment (compound)
 
-```
-Mood Score Range: 0 → 1
-Normalized Score: -1 → +1
+```text
+Range: 0 → 1
+Normalized: -1 → +1
 ```
 
 ---
 
 # 💡 Insight System
 
-The system generates human-readable insights such as:
+Generates human-readable interpretations such as:
 
 * Stress / anxiety detection
+* Calm / stable speech
+* Excitement / engagement
 * Fatigue / low energy
-* Excitement / high engagement
-* Stable emotional state
+
+---
+
+# 🧠 Confidence Score
+
+Confidence represents reliability of prediction based on voice stability:
+
+```text
+Low jitter → High confidence
+High jitter → Low confidence
+```
 
 ---
 
 # 🔐 Privacy & Safety
 
 * ❌ Raw audio is NOT stored
-* ✅ Audio processed temporarily and deleted
-* ✅ Only derived features and scores are returned
+* ✅ Temporary file is deleted after processing
+* ✅ Only derived insights are returned
 
 ---
 
@@ -194,18 +268,21 @@ The system generates human-readable insights such as:
 
 ## Frontend (React)
 
+* Record audio (WAV)
+* Send via form-data
 * Display:
 
   * mood_label
   * insight
-  * charts (time-series)
+  * charts
 
 ---
 
 # 🏆 Highlights
 
 * Real-time audio processing
-* Multi-feature emotion analysis
+* Speech-to-text integration
+* Multi-feature emotional analysis
 * Explainable AI outputs
 * Ready for dashboard & trend detection
 
@@ -220,7 +297,7 @@ AI Module developed for Hackathon Project 🚀
 # 💬 Notes
 
 * Use `.wav` format only
-* Ensure microphone input quality for best results
-* Sentiment improves when text input is provided
+* Ensure clear audio input
+* Internet required for speech recognition
 
 ---
