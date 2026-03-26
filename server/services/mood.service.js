@@ -50,12 +50,12 @@ export const createMoodEntryFromAI = async (userId, aiResult) => {
     moodScore: aiResult.moodScore,
     normalizedScore: aiResult.normalizedScore,
     moodLabel: aiResult.moodLabel,
-    sentiment: aiResult.sentiment,
-    sentimentScore: aiResult.rawSentiment?.compound ?? null,
-    features: aiResult.features,
-    confidenceScore: aiResult.confidenceScore,
     insight: aiResult.insight,
-    rawSentiment: aiResult.rawSentiment,
+    confidenceScore: aiResult.confidenceScore,
+    features: aiResult.features,
+    sentiment: aiResult.rawSentiment,
+    text: aiResult.text,
+    timestamp: aiResult.timestamp,
   });
 
   return moodEntry;
@@ -69,12 +69,11 @@ export const createMoodEntry = async (userId, features, text = null) => {
   const { moodScore, label } = generateMoodScore(features);
 
   // Analyze sentiment if text provided
-  let sentimentData = { sentimentScore: null, sentiment: "neutral" };
+  let sentimentData = { sentiment: null };
   if (text) {
     const sentiment = analyzeSentiment(text);
     sentimentData = {
-      sentimentScore: sentiment.sentimentScore,
-      sentiment: sentiment.label,
+      sentiment: sentiment.rawSentiment,
     };
   }
 
@@ -83,12 +82,14 @@ export const createMoodEntry = async (userId, features, text = null) => {
     user: userId,
     source: "voice",
     moodScore,
-    moodLabel: label,
-    sentiment: sentimentData.sentiment,
-    sentimentScore: sentimentData.sentimentScore,
-    features,
-    confidenceScore: 0.85,
     normalizedScore: round(moodScore / 10, 2),
+    moodLabel: label,
+    insight: null,
+    confidenceScore: 0.85,
+    features,
+    sentiment: sentimentData.sentiment,
+    text,
+    timestamp: new Date().toISOString(),
   });
 
   return moodEntry;

@@ -21,7 +21,15 @@ export const analyzeMood = async (req, res, next) => {
     res.status(201).json({
       success: true,
       data: {
-        mood: moodEntry,
+        text: moodEntry.text,
+        mood_score: moodEntry.moodScore,
+        normalized_score: moodEntry.normalizedScore,
+        mood_label: moodEntry.moodLabel,
+        insight: moodEntry.insight,
+        confidence: moodEntry.confidenceScore,
+        features: moodEntry.features,
+        sentiment: moodEntry.sentiment,
+        timestamp: moodEntry.timestamp,
         alert: alert ? { id: alert._id, type: alert.type, message: alert.message } : null,
       },
     });
@@ -82,11 +90,15 @@ export const processAudio = async (req, res, next) => {
     res.status(201).json({
       success: true,
       data: {
-        moodScore: moodEntry.moodScore,
-        normalizedScore: moodEntry.normalizedScore,
-        moodLabel: moodEntry.moodLabel,
-        confidence: moodEntry.confidenceScore,
+        text: moodEntry.text,
+        mood_score: moodEntry.moodScore,
+        normalized_score: moodEntry.normalizedScore,
+        mood_label: moodEntry.moodLabel,
         insight: moodEntry.insight,
+        confidence: moodEntry.confidenceScore,
+        features: moodEntry.features,
+        sentiment: moodEntry.sentiment,
+        timestamp: moodEntry.timestamp,
         trend: trend.trend,
         fluctuation: trend.fluctuation,
         alert: alert ? {

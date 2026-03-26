@@ -11,16 +11,6 @@ const moodSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    sentiment: {
-      type: String,
-      enum: ["positive", "neutral", "negative"],
-      required: true,
-    },
-    source: {
-      type: String,
-      enum: ["voice", "text"], // "text" reserved for future use
-      required: true,
-    },
     normalizedScore: {
       type: Number,
       default: null,
@@ -34,22 +24,29 @@ const moodSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
-    features: {
-      type: Object,
-      default: null,
-    },
     confidenceScore: {
       type: Number,
       default: null,
     },
-    rawSentiment: {
+    features: {
       type: Object,
       default: null,
     },
-    sentimentScore: {
-      type: Number,
-      min: -1,
-      max: 1,
+    sentiment: {
+      type: Object,
+      default: null,
+    },
+    text: {
+      type: String,
+      default: null,
+    },
+    source: {
+      type: String,
+      enum: ["voice", "text"],
+      required: true,
+    },
+    timestamp: {
+      type: String,
       default: null,
     },
   },

@@ -23,6 +23,7 @@ const mapAIResponse = (data) => {
     features: data.features,         // { pitch, energy, tempo, jitter }
     sentiment: sentimentLabel,        // "positive" | "neutral" | "negative"
     rawSentiment: data.sentiment,     // full VADER object { compound, pos, neg, neu }
+    text: data.text,                  // transcribed text from speech-to-text
     timestamp: data.timestamp,
   };
 };
