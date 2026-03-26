@@ -18,7 +18,6 @@ import {
 import VoiceRecorder from '../components/VoiceRecorder';
 import MoodChart from '../components/MoodChart';
 import AlertModal from '../components/AlertModal';
-import ArchitectureDiagram from '../components/ArchitectureDiagram';
 import { cn } from '../lib/utils';
 
 const Dashboard = () => {
@@ -203,15 +202,15 @@ const Dashboard = () => {
                 </div>
 
                 {/* Privacy Deletion Demo */}
-                <div className="p-4 bg-foreground rounded-2xl border border-border overflow-hidden relative">
+                <div className="p-4 bg-card rounded-2xl border border-border overflow-hidden relative shadow-sm">
                   <div className="flex items-center justify-between relative z-10">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-background/20 rounded-lg flex items-center justify-center">
-                        <ShieldCheck className="w-4 h-4 text-background" />
+                      <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                        <ShieldCheck className="w-4 h-4 text-primary" />
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-background">Privacy Protocol</p>
-                        <p className="text-[10px] text-background/60">Audio Deletion Logic Active</p>
+                        <p className="text-xs font-bold text-foreground">Privacy Protocol</p>
+                        <p className="text-[10px] text-muted-foreground">Audio Deletion Logic Active</p>
                       </div>
                     </div>
                     {isDeleting ? (
@@ -249,11 +248,11 @@ const Dashboard = () => {
                       </span>
                     </div>
                   </div>
-                  <div className="flex-1 p-4 bg-foreground rounded-2xl text-background">
-                    <p className="text-[10px] font-bold text-background/60 uppercase mb-1">Mood Score</p>
-                    <div className="flex items-end gap-2">
+                  <div className="flex-1 p-4 bg-primary/10 rounded-2xl border border-primary/20">
+                    <p className="text-[10px] font-bold text-primary/60 uppercase mb-1">Mood Score</p>
+                    <div className="flex items-end gap-2 text-primary">
                       <span className="text-3xl font-bold font-display">{lastResult.moodScore}</span>
-                      <span className="text-background/60 text-sm mb-1">/ 10</span>
+                      <span className="opacity-60 text-sm mb-1">/ 10</span>
                     </div>
                   </div>
                 </div>
@@ -323,11 +322,6 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Architecture Card */}
-          <div className="bg-card rounded-3xl p-8 shadow-sm border border-border">
-            <h3 className="text-xl font-bold font-display text-foreground mb-6">System Architecture</h3>
-            <ArchitectureDiagram />
-          </div>
         </div>
       </div>
 

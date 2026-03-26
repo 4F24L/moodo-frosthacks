@@ -76,7 +76,7 @@ const Auth = ({ onLogin }) => {
             setIsLogin(true);
             setShowAuthModal(true);
           }}
-          className="px-6 py-2.5 bg-foreground hover:bg-foreground/90 text-background font-bold rounded-xl transition-all text-sm"
+          className="px-6 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-xl transition-all text-sm shadow-lg shadow-primary/10"
         >
           Login
         </motion.button>
@@ -343,10 +343,10 @@ const Auth = ({ onLogin }) => {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: 0.5 }}
-                  className="absolute bottom-8 left-8 right-8 p-6 rounded-2xl bg-background/10 backdrop-blur-md border border-background/20 text-background"
+                  className="absolute bottom-8 left-8 right-8 p-6 rounded-2xl bg-card/80 backdrop-blur-md border border-border shadow-xl text-card-foreground"
                 >
                   <p className="text-lg font-medium italic">"MOODO helped me identify that my stress peaks every Tuesday morning. Now I've adjusted my schedule and feel much better."</p>
-                  <p className="mt-4 font-bold">— Alex Chen, Beta User</p>
+                  <p className="mt-4 font-bold text-primary">— Alex Chen, Beta User</p>
                 </motion.div>
               </div>
               {/* Decorative elements */}
@@ -540,8 +540,8 @@ const Auth = ({ onLogin }) => {
       </section>
 
       {/* Trust & Security */}
-      <section className="relative z-10 py-24 bg-foreground text-background overflow-hidden">
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px] translate-x-1/2 -translate-y-1/2" />
+      <section className="relative z-10 py-24 bg-card border-y border-border overflow-hidden">
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] translate-x-1/2 -translate-y-1/2" />
         <div className="max-w-7xl mx-auto px-6 lg:px-12 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <motion.div 
@@ -550,11 +550,11 @@ const Auth = ({ onLogin }) => {
               viewport={{ once: true }}
               className="space-y-8"
             >
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/20 text-primary text-sm font-bold border border-primary/30">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-bold border border-primary/20">
                 <ShieldCheck className="w-4 h-4" /> Privacy First
               </div>
-              <h2 className="text-4xl lg:text-5xl font-bold font-display leading-tight">Your Data is Yours. <br /> Period.</h2>
-              <p className="text-background/60 text-lg leading-relaxed">
+              <h2 className="text-4xl lg:text-5xl font-bold font-display leading-tight text-foreground">Your Data is Yours. <br /> Period.</h2>
+              <p className="text-muted-foreground text-lg leading-relaxed">
                 We believe emotional data is the most sensitive information you have. That's why MOODO is built with a privacy-first architecture, ensuring your recordings and insights are encrypted and only accessible by you.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -571,14 +571,14 @@ const Auth = ({ onLogin }) => {
                     whileHover={{ x: 5, scale: 1.02 }}
                     viewport={{ once: true }}
                     transition={{ delay: i * 0.1 }}
-                    className="flex items-start gap-4 p-3 rounded-xl hover:bg-white/5 transition-colors cursor-default"
+                    className="flex items-start gap-4 p-3 rounded-xl hover:bg-muted transition-colors cursor-default"
                   >
-                    <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-card border border-border flex items-center justify-center shrink-0">
                       <item.icon className="w-5 h-5 text-primary" />
                     </div>
                     <div>
-                      <h4 className="font-bold text-white text-sm">{item.title}</h4>
-                      <p className="text-background/40 text-xs">{item.desc}</p>
+                      <h4 className="font-bold text-foreground text-sm">{item.title}</h4>
+                      <p className="text-muted-foreground text-xs">{item.desc}</p>
                     </div>
                   </motion.div>
                 ))}
@@ -591,7 +591,7 @@ const Auth = ({ onLogin }) => {
               className="relative"
             >
               <div className="aspect-square rounded-[3rem] bg-gradient-to-br from-primary to-primary/50 p-1">
-                <div className="w-full h-full rounded-[2.8rem] bg-foreground flex items-center justify-center relative overflow-hidden">
+                <div className="w-full h-full rounded-[2.8rem] bg-card flex items-center justify-center relative overflow-hidden">
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(var(--primary),0.1),transparent)]" />
                   <div className="text-center space-y-6 relative z-10">
                     <motion.div 
@@ -603,8 +603,8 @@ const Auth = ({ onLogin }) => {
                       <ShieldCheck className="w-12 h-12 text-primary" />
                     </motion.div>
                     <div className="space-y-2">
-                      <p className="text-3xl font-bold font-display">100% Secure</p>
-                      <p className="text-background/40">Verified Privacy Standards</p>
+                      <p className="text-3xl font-bold font-display text-foreground">100% Secure</p>
+                      <p className="text-muted-foreground">Verified Privacy Standards</p>
                     </div>
                   </div>
                 </div>

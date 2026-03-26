@@ -85,18 +85,18 @@ const Trends = () => {
 
       {/* Insights Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-foreground rounded-3xl p-8 text-background space-y-6">
-          <h3 className="text-xl font-bold font-display">AI Insights</h3>
+        <div className="bg-card rounded-3xl p-8 border border-border shadow-sm space-y-6">
+          <h3 className="text-xl font-bold font-display text-foreground">AI Insights</h3>
           <div className="space-y-4">
-            <div className="p-4 bg-background/10 rounded-2xl border border-background/10 backdrop-blur-sm">
+            <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10">
               <p className="font-bold text-primary mb-1">Weekly Summary</p>
-              <p className="text-sm text-background/80 leading-relaxed">
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 Your mood has been relatively stable, but we noticed a significant dip starting Wednesday. This correlates with your recorded "overwhelmed" sessions.
               </p>
             </div>
-            <div className="p-4 bg-background/10 rounded-2xl border border-background/10 backdrop-blur-sm">
-              <p className="font-bold text-emerald-300 mb-1">Positive Pattern</p>
-              <p className="text-sm text-background/80 leading-relaxed">
+            <div className="p-4 bg-emerald-500/5 rounded-2xl border border-emerald-500/10">
+              <p className="font-bold text-emerald-600 dark:text-emerald-400 mb-1">Positive Pattern</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 Your mood is consistently 20% higher on mornings when you record before 9 AM. This suggests a positive start-of-day routine.
               </p>
             </div>
