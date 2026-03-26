@@ -1,7 +1,20 @@
 import multer from "multer";
 import path from "path";
 
-const ALLOWED_AUDIO_TYPES = ["audio/mpeg", "audio/wav", "audio/ogg", "audio/webm", "audio/mp4"];
+const ALLOWED_AUDIO_TYPES = [
+  "audio/mpeg",
+  "audio/wav",
+  "audio/wave",
+  "audio/x-wav",
+  "audio/ogg",
+  "audio/webm",
+  "audio/mp4",
+  "audio/aac",
+  "audio/flac",
+  "audio/x-m4a",
+];
+
+const ALLOWED_EXTENSIONS = [".mp3", ".wav", ".ogg", ".webm", ".m4a", ".aac", ".flac"];
 
 // Disk storage for backward compatibility with existing endpoints
 const diskStorage = multer.diskStorage({
@@ -17,10 +30,20 @@ const diskStorage = multer.diskStorage({
 const memoryStorage = multer.memoryStorage();
 
 const fileFilter = (_req, file, cb) => {
-  if (ALLOWED_AUDIO_TYPES.includes(file.mimetype)) {
+  const ext = path.extname(file.originalname).toLowerCase();
+  const isMimeTypeAllowed = ALLOWED_AUDIO_TYPES.includes(file.mimetype);
+  const isExtensionAllowed = ALLOWED_EXTENSIONS.includes(ext);
+
+  // Accept if either MIME type or extension matches
+  if (isMimeTypeAllowed || isExtensionAllowed) {
     cb(null, true);
   } else {
-    cb(new Error("Unsupported file type. Only audio files are allowed."), false);
+    cb(
+      new Error(
+        `Unsupported file type. Allowed: ${ALLOWED_EXTENSIONS.join(", ")}. Got: ${ext || file.mimetype}`
+      ),
+      false
+    );
   }
 };
 

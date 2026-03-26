@@ -38,12 +38,6 @@ Header: Authorization: Bearer <token>
 - **Body:** `{ features: { pitch, jitter, speech_rate }, text? }`
 - **Returns:** `{ mood, alert }`
 
-### Upload Voice
-- **POST** `/mood/voice`
-- **Header:** `Authorization: Bearer <token>`
-- **Body:** FormData with `audio` file
-- **Returns:** `{ mood, alert }`
-
 ### Get History
 - **GET** `/mood/history?range=7d&limit=20`
 - **Header:** `Authorization: Bearer <token>`

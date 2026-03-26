@@ -1,6 +1,5 @@
 import { Router } from "express";
 import {
-  uploadVoiceMood,
   analyzeMood,
   getMoodHistory,
   getLatestMood,
@@ -12,7 +11,7 @@ import {
   processAudio,
 } from "../controllers/moodController.js";
 import protect from "../middleware/authMiddleware.js";
-import upload, { uploadMemory } from "../utils/uploadMiddleware.js";
+import { uploadMemory } from "../utils/uploadMiddleware.js";
 import { validate } from "../middleware/validate.js";
 import {
   moodAnalyzeSchema,
@@ -24,7 +23,6 @@ const router = Router();
 
 // Mood endpoints
 router.post("/analyze", protect, validate(moodAnalyzeSchema), analyzeMood);
-router.post("/voice", protect, upload.single("audio"), uploadVoiceMood);
 
 // Privacy-first audio processing endpoint
 // Uses memory storage - audio is never persisted to disk
