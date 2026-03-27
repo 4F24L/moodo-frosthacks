@@ -11,19 +11,42 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [validationError, setValidationError] = useState('');
 
   const { login, register, loading, error } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setValidationError('');
 
     try {
       if (isLogin) {
-        if (!validateEmail(email) || !validatePassword(password)) return;
+        if (!validateEmail(email)) {
+          setValidationError('Please enter a valid email address');
+          return;
+        }
+        if (!validatePassword(password)) {
+          setValidationError('Password must be at least 6 characters');
+          return;
+        }
         await login(email, password);
       } else {
-        if (!name.trim() || !validateEmail(email) || !validatePassword(password)) return;
-        if (password !== confirmPassword) return;
+        if (!name.trim()) {
+          setValidationError('Please enter your name');
+          return;
+        }
+        if (!validateEmail(email)) {
+          setValidationError('Please enter a valid email address');
+          return;
+        }
+        if (!validatePassword(password)) {
+          setValidationError('Password must be at least 6 characters');
+          return;
+        }
+        if (password !== confirmPassword) {
+          setValidationError('Passwords do not match');
+          return;
+        }
         await register(name, email, password);
       }
 
@@ -80,13 +103,13 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
-                {error && (
+                {(error || validationError) && (
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="p-3 bg-destructive/10 border border-destructive/20 rounded-xl text-destructive text-xs font-bold"
                   >
-                    {error}
+                    {validationError || error}
                   </motion.div>
                 )}
 
@@ -164,6 +187,28 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
                     </button>
                   </div>
                 </motion.div>
+
+                {!isLogin && (
+                  <motion.div
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="space-y-2"
+                  >
+                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Confirm Password</label>
+                    <div className="relative">
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        required
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="password123"
+                        className="w-full pl-12 pr-12 py-3 bg-muted/50 border border-border rounded-2xl focus:ring-2 focus:ring-primary focus:bg-card transition-all outline-none text-sm text-foreground"
+                      />
+                    </div>
+                  </motion.div>
+                )}
 
                 <motion.button
                   initial={{ opacity: 0, y: 10 }}
