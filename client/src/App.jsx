@@ -1,59 +1,57 @@
 import { AnimatePresence, motion } from "motion/react";
-import { useState } from "react";
-import { Navigate, Route, Routes, useLocation } from "react-router-dom";
-import { AdminDashboard, Sidebar, TopHeader } from "./components";
+import { useState, useEffect } from "react";
+import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import { Sidebar, TopHeader } from "./components";
+import AdminDashboard from "./pages/AdminDashboard";
 import { useAuth } from "./hooks";
-import { AdminLogin, Dashboard, History, Landing, Profile, Result, Trends } from "./pages";
+import { Dashboard, History, Landing, Profile, Result, Trends } from "./pages";
 
 export default function App() {
-  const { isAuthenticated, logout } = useAuth();
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => {
-    return localStorage.getItem("isAdminAuthenticated") === "true";
-  });
+  const { isAuthenticated, userRole, logout } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
-  // Remove changeTab event listener as we use react-router now
+  // Redirect based on role after authentication
+  useEffect(() => {
+    if (isAuthenticated && location.pathname === "/") {
+      if (userRole === "admin") {
+        navigate("/admin", { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
+    }
+  }, [isAuthenticated, userRole, location.pathname, navigate]);
 
   const handleLogout = () => {
     logout();
     window.location.reload();
   };
 
-  const handleAdminLogout = () => {
-    localStorage.removeItem("isAdminAuthenticated");
-    setIsAdminAuthenticated(false);
-  };
-
   const isAdminPath = location.pathname.startsWith("/admin");
 
+  // Show landing page if not authenticated and not on admin path
   if (!isAuthenticated && !isAdminPath) {
     return <Landing onLogin={() => window.location.reload()} />;
   }
 
+  // Admin routes - check if user is admin
   if (isAdminPath) {
+    if (!isAuthenticated) {
+      return <Landing onLogin={() => window.location.reload()} />;
+    }
+
+    if (userRole !== "admin") {
+      return <Navigate to="/dashboard" replace />;
+    }
+
     return (
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
           <Route
-            path="/admin/login"
-            element={
-              <AdminLogin
-                onLoginSuccess={() => setIsAdminAuthenticated(true)}
-              />
-            }
+            path="/admin/*"
+            element={<AdminDashboard onLogout={handleLogout} />}
           />
-          <Route
-            path="/admin"
-            element={
-              isAdminAuthenticated ? (
-                <AdminDashboard onLogout={handleAdminLogout} />
-              ) : (
-                <Navigate to="/admin/login" replace />
-              )
-            }
-          />
-          <Route path="*" element={<Navigate to="/admin/login" replace />} />
         </Routes>
       </AnimatePresence>
     );

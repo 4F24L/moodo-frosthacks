@@ -24,6 +24,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ["user", "admin"],
       default: "user",
+      index: true, // Index for role-based queries
     },
     refreshToken: {
       type: String,
@@ -32,6 +33,9 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// Index for date-based queries
+userSchema.index({ createdAt: -1 });
 
 const User = mongoose.model("User", userSchema);
 

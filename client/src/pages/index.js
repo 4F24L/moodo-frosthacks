@@ -6,5 +6,4 @@ export { default as Landing } from "./Landing";
 export { default as Profile } from "./Profile";
 export { default as Result } from "./Result";
 export { default as Trends } from "./Trends";
-export { default as AdminLogin } from "./AdminLogin";
-
+export { default as AdminDashboard } from "./AdminDashboard";

@@ -29,7 +29,25 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
           setValidationError('Password must be at least 6 characters');
           return;
         }
-        await login(email, password);
+        const response = await login(email, password);
+        
+        // Check user role and redirect accordingly
+        const userRole = response.data?.user?.role || response.user?.role;
+        
+        onClose();
+        onSuccess();
+
+        // Redirect based on role
+        if (userRole === 'admin') {
+          window.location.href = '/admin';
+        } else {
+          window.location.href = '/dashboard';
+        }
+
+        setEmail('');
+        setPassword('');
+        setName('');
+        setConfirmPassword('');
       } else {
         if (!name.trim()) {
           setValidationError('Please enter your name');
@@ -48,15 +66,15 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
           return;
         }
         await register(name, email, password);
+
+        onClose();
+        onSuccess();
+
+        setEmail('');
+        setPassword('');
+        setName('');
+        setConfirmPassword('');
       }
-
-      onClose();
-      onSuccess();
-
-      setEmail('');
-      setPassword('');
-      setName('');
-      setConfirmPassword('');
     } catch (err) {
       console.error('Auth error:', err);
     }

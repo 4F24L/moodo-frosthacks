@@ -38,6 +38,9 @@ export const useAuth = () => {
     authService.isAuthenticated(),
   );
 
+  // Get user role
+  const userRole = user?.role || authService.getUserRole() || "user";
+
   // Handle unauthorized events
   useEffect(() => {
     const handleUnauthorized = () => {
@@ -53,15 +56,51 @@ export const useAuth = () => {
   const register = useCallback(async (name, email, password) => {
     setLoading(true);
     setError(null);
+    
+    // Client-side validation
+    if (!name || !email || !password) {
+      const error = new Error("All fields are required");
+      setError(error.message);
+      setLoading(false);
+      throw error;
+    }
+
+    if (name.trim().length < 2) {
+      const error = new Error("Name must be at least 2 characters");
+      setError(error.message);
+      setLoading(false);
+      throw error;
+    }
+
+    if (password.length < 6) {
+      const error = new Error("Password must be at least 6 characters");
+      setError(error.message);
+      setLoading(false);
+      throw error;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      const error = new Error("Invalid email format");
+      setError(error.message);
+      setLoading(false);
+      throw error;
+    }
+
     try {
       const response = await authService.register(name, email, password);
       const token = response.data?.accessToken || response.accessToken;
+      
+      if (!token) {
+        throw new Error("Registration successful but no token received");
+      }
+
       authService.setToken(token);
       setIsAuthenticated(true);
       setUser(decodeToken(token));
       return response;
     } catch (err) {
-      const message = err.data?.message || err.message || "Registration failed";
+      const message = err.data?.message || err.message || "Registration failed. Please try again.";
       setError(message);
       throw err;
     } finally {
@@ -72,15 +111,37 @@ export const useAuth = () => {
   const login = useCallback(async (email, password) => {
     setLoading(true);
     setError(null);
+
+    // Client-side validation
+    if (!email || !password) {
+      const error = new Error("Email and password are required");
+      setError(error.message);
+      setLoading(false);
+      throw error;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      const error = new Error("Invalid email format");
+      setError(error.message);
+      setLoading(false);
+      throw error;
+    }
+
     try {
       const response = await authService.login(email, password);
       const token = response.data?.accessToken || response.accessToken;
+      
+      if (!token) {
+        throw new Error("Login successful but no token received");
+      }
+
       authService.setToken(token);
       setIsAuthenticated(true);
       setUser(decodeToken(token));
       return response;
     } catch (err) {
-      const message = err.data?.message || err.message || "Login failed";
+      const message = err.data?.message || err.message || "Login failed. Please check your credentials.";
       setError(message);
       throw err;
     } finally {
@@ -115,6 +176,7 @@ export const useAuth = () => {
     loading,
     error,
     isAuthenticated,
+    userRole,
     register,
     login,
     logout,

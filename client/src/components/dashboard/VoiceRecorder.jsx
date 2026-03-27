@@ -34,8 +34,30 @@ const VoiceRecorder = ({ onResult, onRecordingChange }) => {
     setIsDragging(false);
 
     try {
+      // Validate audio blob
+      if (!audioBlob || audioBlob.size === 0) {
+        throw new Error("Audio file is empty. Please try recording again.");
+      }
+
+      // Check file size (max 10MB)
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (audioBlob.size > maxSize) {
+        throw new Error("Audio file is too large. Maximum size is 10MB.");
+      }
+
       // Convert webm blob to wav blob
-      const wavBlob = await convertBlobToWav(audioBlob);
+      let wavBlob;
+      try {
+        wavBlob = await convertBlobToWav(audioBlob);
+      } catch (conversionError) {
+        console.error("Audio conversion error:", conversionError);
+        throw new Error("Failed to process audio format. Please try again.");
+      }
+
+      // Validate converted blob
+      if (!wavBlob || wavBlob.size === 0) {
+        throw new Error("Audio conversion failed. Please try again.");
+      }
 
       // Convert blob to file
       const audioFile = new File([wavBlob], `recording-${Date.now()}.wav`, {
@@ -43,18 +65,39 @@ const VoiceRecorder = ({ onResult, onRecordingChange }) => {
       });
 
       // Call API
-      const res = await processAudio(audioFile);
-      const response = res.data || res;
+      let res;
+      try {
+        res = await processAudio(audioFile);
+      } catch (apiError) {
+        console.error("API error:", apiError);
+        
+        // Handle specific error cases
+        if (apiError.status === 0) {
+          throw new Error("Network error. Please check your internet connection.");
+        } else if (apiError.status === 503) {
+          throw new Error("Analysis service is temporarily unavailable. Please try again in a moment.");
+        } else if (apiError.status === 400) {
+          throw new Error(apiError.message || "Invalid audio file. Please try again.");
+        } else {
+          throw new Error(apiError.message || "Failed to analyze audio. Please try again.");
+        }
+      }
 
+      const response = res.data || res;
       const responseData = response?.data || response;
+
+      // Validate response data
+      if (!responseData) {
+        throw new Error("Invalid response from server. Please try again.");
+      }
 
       // Transform API response to match expected format
       onResult({
         text: responseData.text || "Audio processed successfully",
         sentiment:
-          responseData.normalized_score ||
-          responseData.normalizedScore ||
-          responseData.sentiment?.compound ||
+          responseData.normalized_score ??
+          responseData.normalizedScore ??
+          responseData.sentiment?.compound ??
           0,
         features: responseData.features || {
           pitch: "Analyzed",
@@ -64,18 +107,19 @@ const VoiceRecorder = ({ onResult, onRecordingChange }) => {
         moodScore: responseData.mood_score ?? responseData.moodScore ?? 5.0,
         moodLabel:
           responseData.mood_label || responseData.moodLabel || "Neutral",
-        confidence: responseData.confidence || 0.8,
-        insight: responseData.insight,
-        trend: responseData.trend,
-        fluctuation: responseData.fluctuation,
-        alert: responseData.alert,
+        confidence: responseData.confidence ?? 0.8,
+        insight: responseData.insight || "Analysis complete",
+        trend: responseData.trend ?? 0,
+        fluctuation: responseData.fluctuation ?? 0,
+        alert: responseData.alert || null,
         source: source,
       });
       setTimer(0);
     } catch (error) {
       console.error("Error processing audio:", error);
-      // Show error to user
-      alert(error.message || "Failed to process audio. Please try again.");
+      // Show user-friendly error message
+      const errorMessage = error.message || "Failed to process audio. Please try again.";
+      alert(errorMessage);
     } finally {
       setIsProcessing(false);
     }
@@ -85,13 +129,28 @@ const VoiceRecorder = ({ onResult, onRecordingChange }) => {
     if (isRecording) {
       const startAudio = async () => {
         try {
+          // Check if browser supports getUserMedia
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            throw new Error("Your browser doesn't support audio recording. Please use a modern browser.");
+          }
+
           const stream = await navigator.mediaDevices.getUserMedia({
-            audio: true,
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              sampleRate: 44100,
+            },
           });
           streamRef.current = stream;
 
           // Start MediaRecorder for audio capture
           audioChunksRef.current = [];
+          
+          // Check MediaRecorder support
+          if (!window.MediaRecorder) {
+            throw new Error("Audio recording is not supported in your browser.");
+          }
+
           const mediaRecorder = new MediaRecorder(stream);
           mediaRecorderRef.current = mediaRecorder;
 
@@ -102,15 +161,32 @@ const VoiceRecorder = ({ onResult, onRecordingChange }) => {
           };
 
           mediaRecorder.onstop = () => {
+            if (audioChunksRef.current.length === 0) {
+              console.error("No audio data captured");
+              alert("No audio was recorded. Please try again.");
+              return;
+            }
             const audioBlob = new Blob(audioChunksRef.current, {
               type: "audio/webm",
             });
             setRecordedBlob(audioBlob);
           };
 
+          mediaRecorder.onerror = (event) => {
+            console.error("MediaRecorder error:", event.error);
+            alert("Recording error occurred. Please try again.");
+            setIsRecording(false);
+          };
+
           mediaRecorder.start();
 
           const AudioContext = window.AudioContext || window.webkitAudioContext;
+          
+          if (!AudioContext) {
+            console.warn("AudioContext not supported, visualization disabled");
+            return;
+          }
+
           audioContextRef.current = new AudioContext();
 
           if (audioContextRef.current.state === "suspended") {
@@ -127,7 +203,10 @@ const VoiceRecorder = ({ onResult, onRecordingChange }) => {
           const dataArray = new Uint8Array(bufferLength);
 
           const canvas = canvasRef.current;
+          if (!canvas) return;
+          
           const ctx = canvas.getContext("2d");
+          if (!ctx) return;
 
           const draw = () => {
             if (!analyserRef.current || !ctx) return;
@@ -200,6 +279,17 @@ const VoiceRecorder = ({ onResult, onRecordingChange }) => {
         } catch (err) {
           console.error("Error accessing microphone:", err);
           setIsRecording(false);
+          
+          // Provide user-friendly error messages
+          if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+            alert("Microphone access denied. Please allow microphone permissions in your browser settings.");
+          } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+            alert("No microphone found. Please connect a microphone and try again.");
+          } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+            alert("Microphone is already in use by another application. Please close other apps and try again.");
+          } else {
+            alert(err.message || "Failed to access microphone. Please try again.");
+          }
         }
       };
       startAudio();
@@ -229,7 +319,9 @@ const VoiceRecorder = ({ onResult, onRecordingChange }) => {
 
       if (canvasRef.current) {
         const ctx = canvasRef.current.getContext("2d");
-        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+        if (ctx) {
+          ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+        }
       }
     }
 
@@ -277,8 +369,31 @@ const VoiceRecorder = ({ onResult, onRecordingChange }) => {
 
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
-    if (file && file.type.startsWith("audio/")) {
-      await handleProcessAudio(file, "upload");
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("audio/")) {
+      alert("Please upload a valid audio file.");
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      alert("Audio file is too large. Maximum size is 10MB.");
+      return;
+    }
+
+    if (file.size === 0) {
+      alert("Audio file is empty. Please select a valid file.");
+      return;
+    }
+
+    await handleProcessAudio(file, "upload");
+    
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   };
 
@@ -296,12 +411,34 @@ const VoiceRecorder = ({ onResult, onRecordingChange }) => {
   const handleDrop = async (e) => {
     e.preventDefault();
     setIsDragging(false);
-    if (!isRecording && !isProcessing) {
-      const file = e.dataTransfer.files?.[0];
-      if (file && file.type.startsWith("audio/")) {
-        await handleProcessAudio(file, "upload");
-      }
+    
+    if (isRecording || isProcessing) return;
+
+    const file = e.dataTransfer.files?.[0];
+    if (!file) {
+      alert("No file detected. Please try again.");
+      return;
     }
+
+    // Validate file type
+    if (!file.type.startsWith("audio/")) {
+      alert("Please drop a valid audio file.");
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      alert("Audio file is too large. Maximum size is 10MB.");
+      return;
+    }
+
+    if (file.size === 0) {
+      alert("Audio file is empty. Please select a valid file.");
+      return;
+    }
+
+    await handleProcessAudio(file, "upload");
   };
 
   const formatTime = (seconds) => {

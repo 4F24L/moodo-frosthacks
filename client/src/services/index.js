@@ -8,3 +8,4 @@ export { moodService } from "./mood.service.js";
 export { sentimentService } from "./sentiment.service.js";
 export { alertsService } from "./alerts.service.js";
 export { healthService } from "./health.service.js";
+export { adminService } from "./admin.service.js";

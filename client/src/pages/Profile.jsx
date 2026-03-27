@@ -4,6 +4,7 @@ import { ProfileHeader } from '../components';
 import { SettingsItem } from '../components';
 import { PrivacyBanner } from '../components';
 import { useAuth, useMood } from '../hooks';
+import { formatDate } from '../lib/helpers';
 
 const Profile = () => {
   const { user } = useAuth();
@@ -17,7 +18,7 @@ const Profile = () => {
     name: user?.name || 'User',
     email: user?.email || '',
     avatar: user?.avatar || `https://ui-avatars.com/api/?name=${user?.name || 'U'}&background=random`,
-    joined: user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Recently',
+    joined: user?.createdAt ? formatDate(user.createdAt) : 'Recently',
     stats: {
       totalRecordings: dashboard?.entries?.length || 0,
       avgMood: dashboard?.averageMood ? dashboard.averageMood.toFixed(1) : '-',

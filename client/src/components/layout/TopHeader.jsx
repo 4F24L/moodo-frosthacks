@@ -8,12 +8,13 @@ import {
     DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 
-const TopHeader = ({ onLogout, onOpenSidebar }) => {
+const TopHeader = ({ onLogout, onOpenSidebar, isAdmin = false }) => {
   const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
   const userName = user?.name ? user.name.split(" ")[0] : "User";
+  const greeting = isAdmin ? `Admin Panel - ${userName}` : `Hello, ${userName}`;
 
   return (
     <header className="flex h-16 shrink-0 items-center justify-between px-4 md:px-8 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-30 sticky top-0">
@@ -34,7 +35,7 @@ const TopHeader = ({ onLogout, onOpenSidebar }) => {
           </button>
         )}
         <span className="text-2xl font-bold font-display tracking-tight text-foreground bg-clip-text text-transparent bg-linear-to-r from-foreground to-foreground/70">
-          Hello, {userName}
+          {greeting}
         </span>
       </div>
 
@@ -49,7 +50,7 @@ const TopHeader = ({ onLogout, onOpenSidebar }) => {
           </button>
         )}
         <span className="text-3xl font-bold font-display tracking-tight text-foreground bg-clip-text text-transparent bg-linear-to-r from-foreground to-foreground/70">
-          Hello, {userName}
+          {greeting}
         </span>
       </div>
 

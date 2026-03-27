@@ -7,6 +7,7 @@ import {
     TextEmotionInput,
     VoiceRecorder,
 } from "../components";
+import { formatDate } from "../lib/helpers";
 
 import { useNavigate } from "react-router-dom";
 import { useAuth, useMood } from "../hooks";
@@ -22,28 +23,73 @@ const Dashboard = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    getDashboard("7d");
+    const fetchDashboard = async () => {
+      try {
+        await getDashboard("7d");
+      } catch (err) {
+        console.error("Failed to load dashboard:", err);
+        // Don't show alert on initial load failure - user might not be logged in yet
+      }
+    };
+    
+    fetchDashboard();
   }, [getDashboard]);
 
   const moodHistory = dashboard?.entries || [];
   const trendPercentage = dashboard?.trend || 0;
 
   const handleVoiceResult = (result) => {
+    // Validate result object
+    if (!result || typeof result !== 'object') {
+      console.error("Invalid result object:", result);
+      alert("Failed to process result. Please try again.");
+      return;
+    }
+
     // Refresh after a delay to get updated history
-    setTimeout(() => getDashboard("7d"), 1500);
+    setTimeout(() => {
+      try {
+        getDashboard("7d");
+      } catch (err) {
+        console.error("Failed to refresh dashboard:", err);
+      }
+    }, 1500);
 
     // Evaluate proactive alerts
-    if (result.moodScore < 5 || result.alert) {
+    const moodScore = result.moodScore ?? 5.0;
+    if (moodScore < 5 || result.alert) {
       setTimeout(() => setShowAlert(true), 1500);
     }
 
     // Navigate to the new nested child route
-    navigate("/dashboard/result", { state: { result } });
+    try {
+      navigate("/dashboard/result", { state: { result } });
+    } catch (navError) {
+      console.error("Navigation error:", navError);
+      alert("Failed to navigate to results. Please try again.");
+    }
   };
 
   const handleTextSubmit = async (e) => {
     e.preventDefault();
-    if (!emotionText.trim()) return;
+    
+    const trimmedText = emotionText.trim();
+    
+    // Validate input
+    if (!trimmedText) {
+      alert("Please enter some text to analyze.");
+      return;
+    }
+
+    if (trimmedText.length < 3) {
+      alert("Please enter at least 3 characters.");
+      return;
+    }
+
+    if (trimmedText.length > 5000) {
+      alert("Text is too long. Maximum 5000 characters.");
+      return;
+    }
 
     setIsTextProcessing(true);
 
@@ -51,15 +97,20 @@ const Dashboard = () => {
       // Use sentiment analysis endpoint for text-only input
       const res = await analyzeMood(
         { pitch: 0, jitter: 0, speech_rate: 0 },
-        emotionText,
+        trimmedText,
       );
 
       const payload = res?.data || res;
       const data = payload?.data || payload;
 
+      // Validate response
+      if (!data) {
+        throw new Error("Invalid response from server");
+      }
+
       handleVoiceResult({
-        text: data?.text || emotionText,
-        sentiment: data?.normalized_score || data?.sentiment?.compound || 0.5,
+        text: data?.text || trimmedText,
+        sentiment: data?.normalized_score ?? data?.sentiment?.compound ?? 0.5,
         features: {
           pitch: data?.features?.pitch ?? 0,
           energy: data?.features?.energy ?? 0,
@@ -68,17 +119,31 @@ const Dashboard = () => {
         },
         moodScore: data?.mood_score ?? data?.moodScore ?? 5.0,
         moodLabel: data?.mood_label || data?.moodLabel || "Neutral",
-        confidence: data?.confidence,
-        insight: data?.insight,
-        trend: data?.trend,
-        fluctuation: data?.fluctuation,
-        alert: data?.alert,
+        confidence: data?.confidence ?? 0.5,
+        insight: data?.insight || "Analysis complete",
+        trend: data?.trend ?? 0,
+        fluctuation: data?.fluctuation ?? 0,
+        alert: data?.alert || null,
         source: "text",
       });
       setEmotionText("");
     } catch (err) {
       console.error("Text analysis error:", err);
-      alert(err.message || "Failed to analyze text. Please try again.");
+      
+      // Handle specific error cases
+      let errorMessage = "Failed to analyze text. Please try again.";
+      
+      if (err.status === 0) {
+        errorMessage = "Network error. Please check your internet connection.";
+      } else if (err.status === 401) {
+        errorMessage = "Session expired. Please log in again.";
+      } else if (err.status === 503) {
+        errorMessage = "Analysis service is temporarily unavailable. Please try again in a moment.";
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      alert(errorMessage);
     } finally {
       setIsTextProcessing(false);
     }
@@ -107,11 +172,7 @@ const Dashboard = () => {
       >
         <DashboardHeader
           streak={dashboard?.streak || 0}
-          date={new Date().toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-          })}
+          date={formatDate(new Date())}
         />
 
         {/* Mobile Mode Selector */}

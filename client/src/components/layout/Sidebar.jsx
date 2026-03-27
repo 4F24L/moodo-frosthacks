@@ -1,4 +1,4 @@
-import { Activity, Clock, TrendingUp, User } from "lucide-react";
+import { Activity, Clock, TrendingUp, User, LayoutDashboard, Users } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "../../lib/utils";
@@ -10,7 +10,7 @@ const themes = [
   { id: "midnight", label: "Midnight Purple", color: "bg-indigo-600" },
 ];
 
-const tabs = [
+const userTabs = [
   { id: "dashboard", path: "/dashboard", label: "Journal", icon: Activity },
   {
     id: "history",
@@ -27,9 +27,16 @@ const tabs = [
   { id: "profile", path: "/dashboard/profile", label: "Profile", icon: User },
 ];
 
-const Sidebar = ({ isOpen, setIsOpen }) => {
+const adminTabs = [
+  { id: "overview", path: "/admin", label: "Overview", icon: LayoutDashboard },
+  { id: "users", path: "/admin/users", label: "All Users", icon: Users },
+];
+
+const Sidebar = ({ isOpen, setIsOpen, isAdmin = false }) => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  const tabs = isAdmin ? adminTabs : userTabs;
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full bg-card/80 backdrop-blur-3xl border-r border-border/60 shadow-[4px_0_24px_-10px_rgba(0,0,0,0.1)] transition-colors duration-300">
@@ -43,7 +50,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
       <div className="flex-1 px-4 py-8 space-y-2 overflow-y-auto">
         <p className="px-2 text-xs font-bold text-muted-foreground uppercase tracking-wider mb-4">
-          overview
+          {isAdmin ? 'Admin Panel' : 'overview'}
         </p>
         <div className="space-y-1 relative">
           {tabs.map((tab) => {
@@ -64,7 +71,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
               >
                 {isActive && (
                   <motion.div
-                    layoutId="activeTabIndicatorDesktop"
+                    layoutId={isAdmin ? "activeAdminTabIndicator" : "activeTabIndicatorDesktop"}
                     className="absolute inset-0 bg-primary/10 border border-primary/20 rounded-xl"
                     initial={false}
                     transition={{ type: "spring", stiffness: 300, damping: 30 }}

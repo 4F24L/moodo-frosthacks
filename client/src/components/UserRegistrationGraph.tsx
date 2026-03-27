@@ -18,9 +18,19 @@ interface RegistrationData {
 
 interface UserRegistrationGraphProps {
   data: RegistrationData[];
+  total?: number;
+  average?: number;
+  peak?: number;
+  growthPercentage?: number;
 }
 
-export default function UserRegistrationGraph({ data }: UserRegistrationGraphProps) {
+export default function UserRegistrationGraph({ data, total, average, peak, growthPercentage }: UserRegistrationGraphProps) {
+  // Calculate stats from data if not provided
+  const calculatedTotal = total ?? data.reduce((sum, d) => sum + d.count, 0);
+  const calculatedAverage = average ?? (data.length > 0 ? calculatedTotal / data.length : 0);
+  const calculatedPeak = peak ?? (data.length > 0 ? Math.max(...data.map(d => d.count)) : 0);
+  const calculatedGrowth = growthPercentage ?? 0;
+
   return (
     <div className="premium-card p-10 space-y-8 animate-in fade-in duration-700">
       <div className="flex items-center justify-between">
@@ -33,10 +43,18 @@ export default function UserRegistrationGraph({ data }: UserRegistrationGraphPro
             <p className="text-xs text-slate-500 font-medium tracking-tight">Daily growth over the last 7 days</p>
           </div>
         </div>
-        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100">
-          <TrendingUp className="w-3.5 h-3.5" />
-          <span className="text-[10px] font-black uppercase tracking-widest">+24% Growth</span>
-        </div>
+        {calculatedGrowth !== 0 && (
+          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border ${
+            calculatedGrowth > 0 
+              ? 'bg-emerald-50 text-emerald-600 border-emerald-100' 
+              : 'bg-red-50 text-red-600 border-red-100'
+          }`}>
+            <TrendingUp className={`w-3.5 h-3.5 ${calculatedGrowth < 0 ? 'rotate-180' : ''}`} />
+            <span className="text-[10px] font-black uppercase tracking-widest">
+              {calculatedGrowth > 0 ? '+' : ''}{calculatedGrowth.toFixed(1)}% Growth
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="h-[240px] w-full">
@@ -98,15 +116,15 @@ export default function UserRegistrationGraph({ data }: UserRegistrationGraphPro
       <div className="grid grid-cols-3 gap-4 pt-2">
         <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total</p>
-          <p className="text-lg font-black text-slate-900 tracking-tighter">145</p>
+          <p className="text-lg font-black text-slate-900 tracking-tighter">{calculatedTotal}</p>
         </div>
         <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Average</p>
-          <p className="text-lg font-black text-slate-900 tracking-tighter">20.7</p>
+          <p className="text-lg font-black text-slate-900 tracking-tighter">{calculatedAverage.toFixed(1)}</p>
         </div>
         <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Peak</p>
-          <p className="text-lg font-black text-slate-900 tracking-tighter">30</p>
+          <p className="text-lg font-black text-slate-900 tracking-tighter">{calculatedPeak}</p>
         </div>
       </div>
     </div>

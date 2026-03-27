@@ -6,6 +6,7 @@ const moodSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
+      index: true, // Index for faster user queries
     },
     moodScore: {
       type: Number,
@@ -52,6 +53,10 @@ const moodSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// Compound index for efficient date-based queries
+moodSchema.index({ createdAt: -1 });
+moodSchema.index({ user: 1, createdAt: -1 });
 
 const Mood = mongoose.model("Mood", moodSchema);
 

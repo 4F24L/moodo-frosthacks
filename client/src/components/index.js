@@ -8,6 +8,9 @@ export { default as ArchitectureDiagram } from './common/ArchitectureDiagram';
 export { default as LoadingSpinner } from './common/LoadingSpinner';
 export { default as PrivacyBanner } from './common/PrivacyBanner';
 export { default as StatCard } from './common/StatCard';
+export { default as Toast } from './common/Toast';
+export { default as ToastContainer } from './common/ToastContainer';
+export { default as ErrorBoundary } from './common/ErrorBoundary';
 // dashboard components
 export { default as DashboardHeader } from './dashboard/DashboardHeader';
 export { default as InsightCard } from './dashboard/InsightCard';
@@ -28,7 +31,6 @@ export { default as SettingsItem } from './profile/SettingsItem';
 export { default as FluctuationItem } from './trends/FluctuationItem';
 export { default as MoodChart } from './trends/MoodChart';
 export { default as TrendCard } from './trends/TrendCard';
-export { default as AdminDashboard } from './AdminDashboard';
 
 // Landing Page Components
 export * from './landing';

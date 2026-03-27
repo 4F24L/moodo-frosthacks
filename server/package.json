@@ -7,7 +7,10 @@
     "dev": "nodemon server.js",
     "start": "node server.js",
     "build": "echo 'Build complete - ES modules ready for production'",
-    "test": "node tests/api.test.js"
+    "test": "node tests/api.test.js",
+    "create-admin": "node scripts/createAdmin.js",
+    "add-admin": "node scripts/addAdmin.js",
+    "migrate-users": "node scripts/migrateExistingUsers.js"
   },
   "keywords": [],
   "author": "",

@@ -86,12 +86,32 @@ class APIClient {
       if (response.status === 401) {
         this.clearAuth();
         window.dispatchEvent(new Event("unauthorized"));
+        throw new Error("Session expired. Please log in again.");
       }
 
-      const data = await response.json();
+      // Handle network errors or empty responses
+      let data;
+      const contentType = response.headers.get("content-type");
+      
+      if (contentType && contentType.includes("application/json")) {
+        try {
+          data = await response.json();
+        } catch (parseError) {
+          console.error('Failed to parse JSON response:', parseError);
+          throw new Error("Invalid response from server");
+        }
+      } else {
+        // Non-JSON response
+        const text = await response.text();
+        data = { message: text || "Unexpected response format" };
+      }
 
       if (!response.ok) {
-        const error = new Error(data.message || "API request failed");
+        const error = new Error(
+          data.message || 
+          data.error || 
+          `Request failed with status ${response.status}`
+        );
         error.status = response.status;
         error.data = data;
         throw error;
@@ -100,6 +120,21 @@ class APIClient {
       return data;
     } catch (error) {
       console.error(`API Error [${method} ${endpoint}]:`, error);
+      
+      // Handle network errors
+      if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+        const networkError = new Error('Network error. Please check your connection.');
+        networkError.status = 0;
+        throw networkError;
+      }
+
+      // Handle timeout errors
+      if (error.name === 'AbortError') {
+        const timeoutError = new Error('Request timeout. Please try again.');
+        timeoutError.status = 408;
+        throw timeoutError;
+      }
+
       throw error;
     }
   }
