@@ -1,6 +1,42 @@
 import Mood from "../models/Mood.js";
 import { normalize, round } from "../utils/math.js";
-import { analyzeSentiment, combineSentimentWithMood } from "./sentiment.service.js";
+import {
+    analyzeSentiment,
+    combineSentimentWithMood,
+} from "./sentiment.service.js";
+
+/**
+ * Generate insight text based on features and sentiment
+ */
+export const generateInsight = (features, sentimentScore) => {
+  const pitch = features?.pitch || 0;
+  const energy = features?.energy || 0;
+  const tempo = features?.tempo || features?.speech_rate || 0;
+  const jitter = features?.jitter || 0;
+
+  if (jitter > 40)
+    return "High voice instability detected, possible stress or nervousness";
+  if (pitch > 250 && energy > 0.07 && jitter < 10)
+    return "Confident and expressive speech detected";
+  if (pitch > 250 && energy > 0.07)
+    return "High energy and pitch suggest excitement or stress";
+  if (tempo > 150) return "Fast speech indicates urgency or nervousness";
+  if (energy > 0 && energy < 0.02)
+    return "Low energy suggests fatigue or low mood";
+  if (sentimentScore < -0.3) return "Negative sentiment detected in text";
+  if (sentimentScore > 0.5)
+    return "Positive sentiment detected, indicating a good mood";
+
+  if (pitch === 0 && jitter === 0) {
+    if (sentimentScore > 0.2)
+      return "Positive and optimistic text patterns observed.";
+    if (sentimentScore < -0.2)
+      return "Somewhat negative text patterns observed, take care.";
+    return "Text patterns appear stable and normal.";
+  }
+
+  return "Speech patterns appear stable and normal";
+};
 
 /**
  * Generate mood score from voice features
@@ -65,26 +101,56 @@ export const createMoodEntryFromAI = async (userId, aiResult) => {
  * Create mood entry with features
  */
 export const createMoodEntry = async (userId, features, text = null) => {
-  // Generate mood score from features
-  const { moodScore, label } = generateMoodScore(features);
-
   // Analyze sentiment if text provided
   let sentimentData = { sentiment: null };
   if (text) {
     const sentiment = analyzeSentiment(text);
     sentimentData = {
-      sentiment: sentiment.rawSentiment,
+      sentiment: {
+        compound: sentiment.sentimentScore,
+        label: sentiment.label,
+      },
     };
   }
+
+  // Generate mood score from features
+  let { moodScore, label } = generateMoodScore(features);
+
+  const hasFeatures =
+    features &&
+    (features.pitch !== 0 ||
+      features.jitter !== 0 ||
+      features.speech_rate !== 0);
+
+  if (text && sentimentData.sentiment) {
+    if (hasFeatures) {
+      moodScore = combineSentimentWithMood(
+        moodScore,
+        sentimentData.sentiment.compound,
+      );
+    } else {
+      moodScore = 5 + sentimentData.sentiment.compound * 4; // Scale to 1-9 mostly
+      moodScore = Math.max(1, Math.min(10, Math.round(moodScore * 10) / 10));
+    }
+  }
+
+  if (moodScore < 3.5) label = "Low";
+  else if (moodScore > 6.5) label = "High";
+  else label = "Medium";
+
+  const insightText = generateInsight(
+    features || {},
+    sentimentData.sentiment?.compound || 0,
+  );
 
   // Create mood entry
   const moodEntry = await Mood.create({
     user: userId,
-    source: "voice",
+    source: hasFeatures ? "voice" : "text",
     moodScore,
     normalizedScore: round(moodScore / 10, 2),
     moodLabel: label,
-    insight: null,
+    insight: insightText,
     confidenceScore: 0.85,
     features,
     sentiment: sentimentData.sentiment,
@@ -162,22 +228,26 @@ export const getMoodStats = async (userId, rangeInDays = 7) => {
 export const getUserStreak = async (userId) => {
   const entries = await Mood.find({ user: userId })
     .sort({ createdAt: -1 })
-    .select('createdAt');
+    .select("createdAt");
 
   if (!entries || entries.length === 0) return 0;
 
   // Extract unique UTC dates (YYYY-MM-DD)
-  const uniqueDates = [...new Set(entries.map(e => {
-    const d = new Date(e.createdAt);
-    return d.toISOString().split('T')[0];
-  }))];
+  const uniqueDates = [
+    ...new Set(
+      entries.map((e) => {
+        const d = new Date(e.createdAt);
+        return d.toISOString().split("T")[0];
+      }),
+    ),
+  ];
 
   const todayDate = new Date();
-  const todayStr = todayDate.toISOString().split('T')[0];
-  
+  const todayStr = todayDate.toISOString().split("T")[0];
+
   const yesterdayDate = new Date();
   yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-  const yesterdayStr = yesterdayDate.toISOString().split('T')[0];
+  const yesterdayStr = yesterdayDate.toISOString().split("T")[0];
 
   // If the latest logged date isn't today or yesterday, the streak is 0
   if (uniqueDates[0] !== todayStr && uniqueDates[0] !== yesterdayStr) {
@@ -189,7 +259,7 @@ export const getUserStreak = async (userId) => {
 
   for (let i = 0; i < uniqueDates.length; i++) {
     const d = uniqueDates[i];
-    const expectedStr = currentDate.toISOString().split('T')[0];
+    const expectedStr = currentDate.toISOString().split("T")[0];
 
     if (d === expectedStr) {
       streak++;
@@ -201,4 +271,3 @@ export const getUserStreak = async (userId) => {
 
   return streak;
 };
-

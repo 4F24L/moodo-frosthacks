@@ -1,13 +1,16 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Mic, Square, Loader2, Upload } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
-import { cn } from '../../lib/utils';
+import { Loader2, Mic, Square, Upload } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useRef, useState } from "react";
+import { useMood } from "../../hooks";
+import { convertBlobToWav } from "../../lib/audioUtils";
+import { cn } from "../../lib/utils";
 
 const VoiceRecorder = ({ onResult, onRecordingChange }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [timer, setTimer] = useState(0);
+  const [recordedBlob, setRecordedBlob] = useState(null);
   const fileInputRef = useRef(null);
   const canvasRef = useRef(null);
   const timerRef = useRef(null);
@@ -15,6 +18,10 @@ const VoiceRecorder = ({ onResult, onRecordingChange }) => {
   const analyserRef = useRef(null);
   const streamRef = useRef(null);
   const animationFrameRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+
+  const { processAudio } = useMood();
 
   useEffect(() => {
     if (onRecordingChange) {
@@ -22,39 +29,114 @@ const VoiceRecorder = ({ onResult, onRecordingChange }) => {
     }
   }, [isRecording, isProcessing, onRecordingChange]);
 
+  const handleProcessAudio = async (audioBlob, source = "recording") => {
+    setIsProcessing(true);
+    setIsDragging(false);
+
+    try {
+      // Convert webm blob to wav blob
+      const wavBlob = await convertBlobToWav(audioBlob);
+
+      // Convert blob to file
+      const audioFile = new File([wavBlob], `recording-${Date.now()}.wav`, {
+        type: "audio/wav",
+      });
+
+      // Call API
+      const res = await processAudio(audioFile);
+      const response = res.data || res;
+
+      const responseData = response?.data || response;
+
+      // Transform API response to match expected format
+      onResult({
+        text: responseData.text || "Audio processed successfully",
+        sentiment:
+          responseData.normalized_score ||
+          responseData.normalizedScore ||
+          responseData.sentiment?.compound ||
+          0,
+        features: responseData.features || {
+          pitch: "Analyzed",
+          energy: "Analyzed",
+          rate: "Analyzed",
+        },
+        moodScore: responseData.mood_score ?? responseData.moodScore ?? 5.0,
+        moodLabel:
+          responseData.mood_label || responseData.moodLabel || "Neutral",
+        confidence: responseData.confidence || 0.8,
+        insight: responseData.insight,
+        trend: responseData.trend,
+        fluctuation: responseData.fluctuation,
+        alert: responseData.alert,
+        source: source,
+      });
+      setTimer(0);
+    } catch (error) {
+      console.error("Error processing audio:", error);
+      // Show error to user
+      alert(error.message || "Failed to process audio. Please try again.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   useEffect(() => {
     if (isRecording) {
       const startAudio = async () => {
         try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+          });
           streamRef.current = stream;
-          
+
+          // Start MediaRecorder for audio capture
+          audioChunksRef.current = [];
+          const mediaRecorder = new MediaRecorder(stream);
+          mediaRecorderRef.current = mediaRecorder;
+
+          mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+              audioChunksRef.current.push(event.data);
+            }
+          };
+
+          mediaRecorder.onstop = () => {
+            const audioBlob = new Blob(audioChunksRef.current, {
+              type: "audio/webm",
+            });
+            setRecordedBlob(audioBlob);
+          };
+
+          mediaRecorder.start();
+
           const AudioContext = window.AudioContext || window.webkitAudioContext;
           audioContextRef.current = new AudioContext();
-          
-          if (audioContextRef.current.state === 'suspended') {
+
+          if (audioContextRef.current.state === "suspended") {
             await audioContextRef.current.resume();
           }
 
           analyserRef.current = audioContextRef.current.createAnalyser();
-          const source = audioContextRef.current.createMediaStreamSource(stream);
+          const source =
+            audioContextRef.current.createMediaStreamSource(stream);
           source.connect(analyserRef.current);
-          
+
           analyserRef.current.fftSize = 256;
           const bufferLength = analyserRef.current.frequencyBinCount;
           const dataArray = new Uint8Array(bufferLength);
 
           const canvas = canvasRef.current;
-          const ctx = canvas.getContext('2d');
+          const ctx = canvas.getContext("2d");
 
           const draw = () => {
             if (!analyserRef.current || !ctx) return;
-            
+
             animationFrameRef.current = requestAnimationFrame(draw);
             analyserRef.current.getByteTimeDomainData(dataArray);
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
+
             let sum = 0;
             for (let i = 0; i < bufferLength; i++) {
               const amplitude = (dataArray[i] - 128) / 128;
@@ -63,7 +145,13 @@ const VoiceRecorder = ({ onResult, onRecordingChange }) => {
             const rms = Math.sqrt(sum / bufferLength);
             const volumeScale = Math.max(0.1, rms * 5);
 
-            const drawWave = (color, opacity, amplitudeMultiplier, frequencyMultiplier, offset) => {
+            const drawWave = (
+              color,
+              opacity,
+              amplitudeMultiplier,
+              frequencyMultiplier,
+              offset,
+            ) => {
               ctx.beginPath();
               ctx.lineWidth = 2;
               ctx.strokeStyle = color;
@@ -74,11 +162,20 @@ const VoiceRecorder = ({ onResult, onRecordingChange }) => {
                 const dataIndex = Math.floor(normalizedX * bufferLength);
                 const jitter = (dataArray[dataIndex] - 128) / 128;
                 const envelope = Math.sin(normalizedX * Math.PI);
-                
-                const y = (canvas.height / 2) + 
-                          (Math.sin(normalizedX * Math.PI * frequencyMultiplier + offset + Date.now() * 0.005) * 
-                           canvas.height * 0.4 * volumeScale * amplitudeMultiplier * envelope) +
-                          (jitter * canvas.height * 0.2 * volumeScale * envelope);
+
+                const y =
+                  canvas.height / 2 +
+                  Math.sin(
+                    normalizedX * Math.PI * frequencyMultiplier +
+                      offset +
+                      Date.now() * 0.005,
+                  ) *
+                    canvas.height *
+                    0.4 *
+                    volumeScale *
+                    amplitudeMultiplier *
+                    envelope +
+                  jitter * canvas.height * 0.2 * volumeScale * envelope;
 
                 if (x === 0) ctx.moveTo(x, y);
                 else ctx.lineTo(x, y);
@@ -86,19 +183,19 @@ const VoiceRecorder = ({ onResult, onRecordingChange }) => {
               ctx.stroke();
             };
 
-            drawWave('var(--primary)', 0.3, 1.0, 2, 0);
-            drawWave('var(--primary)', 0.5, 0.7, 3, Math.PI / 2);
-            drawWave('var(--primary)', 0.8, 0.5, 4, Math.PI);
-            
+            drawWave("var(--primary)", 0.3, 1.0, 2, 0);
+            drawWave("var(--primary)", 0.5, 0.7, 3, Math.PI / 2);
+            drawWave("var(--primary)", 0.8, 0.5, 4, Math.PI);
+
             ctx.globalAlpha = 1.0;
             ctx.shadowBlur = 15;
-            ctx.shadowColor = 'rgba(var(--primary), 0.4)';
+            ctx.shadowColor = "rgba(var(--primary), 0.4)";
           };
-          
+
           draw();
 
           timerRef.current = setInterval(() => {
-            setTimer(prev => prev + 1);
+            setTimer((prev) => prev + 1);
           }, 1000);
         } catch (err) {
           console.error("Error accessing microphone:", err);
@@ -107,11 +204,20 @@ const VoiceRecorder = ({ onResult, onRecordingChange }) => {
       };
       startAudio();
     } else {
+      if (
+        mediaRecorderRef.current &&
+        mediaRecorderRef.current.state !== "inactive"
+      ) {
+        mediaRecorderRef.current.stop();
+      }
       if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current.getTracks().forEach((track) => track.stop());
         streamRef.current = null;
       }
-      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+      if (
+        audioContextRef.current &&
+        audioContextRef.current.state !== "closed"
+      ) {
         audioContextRef.current.close();
         audioContextRef.current = null;
       }
@@ -120,19 +226,28 @@ const VoiceRecorder = ({ onResult, onRecordingChange }) => {
         animationFrameRef.current = null;
       }
       clearInterval(timerRef.current);
-      
+
       if (canvasRef.current) {
-        const ctx = canvasRef.current.getContext('2d');
+        const ctx = canvasRef.current.getContext("2d");
         ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
       }
     }
 
     return () => {
+      if (
+        mediaRecorderRef.current &&
+        mediaRecorderRef.current.state !== "inactive"
+      ) {
+        mediaRecorderRef.current.stop();
+      }
       if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current.getTracks().forEach((track) => track.stop());
         streamRef.current = null;
       }
-      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+      if (
+        audioContextRef.current &&
+        audioContextRef.current.state !== "closed"
+      ) {
         audioContextRef.current.close();
         audioContextRef.current = null;
       }
@@ -144,42 +259,26 @@ const VoiceRecorder = ({ onResult, onRecordingChange }) => {
     };
   }, [isRecording]);
 
-  const processAudio = (source = 'recording') => {
-    setIsProcessing(true);
-    setIsRecording(false);
-    setIsDragging(false);
-    
-    setTimeout(() => {
-      setIsProcessing(false);
-      onResult({
-        text: source === 'upload' 
-          ? "This is a simulated transcription from your uploaded audio file. It sounds like you're doing well."
-          : "I've been feeling a bit overwhelmed lately with the new project, but I'm trying to stay positive.",
-        sentiment: source === 'upload' ? 0.6 : -0.2,
-        features: {
-          pitch: source === 'upload' ? "210 Hz" : "185 Hz",
-          energy: source === 'upload' ? "0.62 RMS" : "0.45 RMS",
-          rate: source === 'upload' ? "155 wpm" : "140 wpm"
-        },
-        moodScore: source === 'upload' ? 7.8 : 4.5,
-        source: source
-      });
-      setTimer(0);
-    }, 2000);
-  };
+  // Process audio when recording stops
+  useEffect(() => {
+    if (recordedBlob && !isRecording) {
+      handleProcessAudio(recordedBlob, "recording");
+      setRecordedBlob(null);
+    }
+  }, [recordedBlob, isRecording]);
 
   const handleToggleRecording = () => {
     if (isRecording) {
-      processAudio('recording');
+      setIsRecording(false);
     } else {
       setIsRecording(true);
     }
   };
 
-  const handleFileUpload = (e) => {
+  const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
-    if (file && file.type.startsWith('audio/')) {
-      processAudio('upload');
+    if (file && file.type.startsWith("audio/")) {
+      await handleProcessAudio(file, "upload");
     }
   };
 
@@ -194,13 +293,13 @@ const VoiceRecorder = ({ onResult, onRecordingChange }) => {
     setIsDragging(false);
   };
 
-  const handleDrop = (e) => {
+  const handleDrop = async (e) => {
     e.preventDefault();
     setIsDragging(false);
     if (!isRecording && !isProcessing) {
       const file = e.dataTransfer.files?.[0];
-      if (file && file.type.startsWith('audio/')) {
-        processAudio('upload');
+      if (file && file.type.startsWith("audio/")) {
+        await handleProcessAudio(file, "upload");
       }
     }
   };
@@ -208,22 +307,24 @@ const VoiceRecorder = ({ onResult, onRecordingChange }) => {
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
   return (
-    <div 
+    <div
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       className={cn(
-        "bg-card rounded-3xl p-4 md:p-5 shadow-sm border transition-all duration-300 flex flex-col items-center justify-center space-y-3 md:space-y-4 relative overflow-hidden h-full",
-        isDragging ? "border-primary bg-primary/5 scale-[1.02]" : "border-border"
+        "bg-card rounded-3xl p-4 md:p-5 shadow-sm border transition-all duration-300 flex flex-col items-center justify-center space-y-3 md:space-y-4 relative overflow-hidden",
+        isDragging
+          ? "border-primary bg-primary/5 scale-[1.02]"
+          : "border-border",
       )}
     >
       <AnimatePresence>
         {isDragging && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -232,21 +333,23 @@ const VoiceRecorder = ({ onResult, onRecordingChange }) => {
             <div className="w-20 h-20 bg-card rounded-3xl shadow-xl flex items-center justify-center mb-4">
               <Upload className="w-10 h-10 text-primary animate-bounce" />
             </div>
-            <p className="text-primary font-bold text-lg">Drop audio to analyze</p>
+            <p className="text-primary font-bold text-lg">
+              Drop audio to analyze
+            </p>
           </motion.div>
         )}
       </AnimatePresence>
 
       {!isRecording && !isProcessing && (
         <div className="absolute top-3 right-3 z-10">
-          <input 
-            type="file" 
+          <input
+            type="file"
             ref={fileInputRef}
             onChange={handleFileUpload}
             accept="audio/*"
-            className="hidden" 
+            className="hidden"
           />
-          <button 
+          <button
             onClick={() => fileInputRef.current?.click()}
             className="w-9 h-9 bg-primary/10 hover:bg-primary/20 text-primary rounded-xl flex items-center justify-center transition-all border border-primary/20 shadow-sm group"
             title="Upload Audio"
@@ -257,7 +360,9 @@ const VoiceRecorder = ({ onResult, onRecordingChange }) => {
       )}
 
       <div className="text-center space-y-1">
-        <h2 className="text-lg md:text-xl font-bold font-display text-foreground">Speak Your Mind</h2>
+        <h2 className="text-lg md:text-xl font-bold font-display text-foreground">
+          Speak Your Mind
+        </h2>
         <p className="text-muted-foreground max-w-xs mx-auto text-xs">
           Just talk or drop an audio file. We're listening.
         </p>
@@ -276,16 +381,16 @@ const VoiceRecorder = ({ onResult, onRecordingChange }) => {
               />
             )}
           </AnimatePresence>
-          
+
           <button
             onClick={handleToggleRecording}
             disabled={isProcessing}
             className={cn(
               "relative z-10 w-20 h-20 md:w-22 md:h-22 rounded-full flex items-center justify-center transition-all duration-300 shadow-xl",
-              isRecording 
-                ? "bg-destructive hover:bg-destructive/90 scale-110" 
+              isRecording
+                ? "bg-destructive hover:bg-destructive/90 scale-110"
                 : "bg-primary hover:bg-primary/90 hover:scale-105",
-              isProcessing && "opacity-50 cursor-not-allowed"
+              isProcessing && "opacity-50 cursor-not-allowed",
             )}
           >
             {isProcessing ? (
@@ -300,28 +405,37 @@ const VoiceRecorder = ({ onResult, onRecordingChange }) => {
       </div>
 
       <div className="flex flex-col items-center gap-1">
-        <span className={cn(
-          "text-xl md:text-2xl font-mono font-bold",
-          isRecording ? "text-destructive" : "text-muted-foreground/50"
-        )}>
+        <span
+          className={cn(
+            "text-xl md:text-2xl font-mono font-bold",
+            isRecording ? "text-destructive" : "text-muted-foreground/50",
+          )}
+        >
           {formatTime(timer)}
         </span>
         <span className="text-[10px] md:text-xs font-semibold uppercase tracking-widest text-muted-foreground/50">
-          {isProcessing ? "Catching the vibe..." : isRecording ? "Listening Live" : "Ready to Listen"}
+          {isProcessing
+            ? "Catching the vibe..."
+            : isRecording
+              ? "Listening Live"
+              : "Ready to Listen"}
         </span>
       </div>
 
-      <div className="w-full flex-1 max-h-28 md:max-h-32 flex items-center justify-center px-4 bg-muted rounded-2xl overflow-hidden border border-border/50">
-        <canvas 
-          ref={canvasRef} 
-          width={400} 
-          height={100} 
+      <div className="w-full h-24 md:h-28 flex items-center justify-center px-4 bg-muted rounded-2xl overflow-hidden border border-border/50">
+        <canvas
+          ref={canvasRef}
+          width={400}
+          height={100}
           className="w-full h-full"
         />
         {!isRecording && !isProcessing && (
           <div className="absolute flex items-center gap-1 opacity-20">
             {[...Array(12)].map((_, i) => (
-              <div key={i} className="w-1 h-4 bg-muted-foreground/30 rounded-full" />
+              <div
+                key={i}
+                className="w-1 h-4 bg-muted-foreground/30 rounded-full"
+              />
             ))}
           </div>
         )}

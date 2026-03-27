@@ -16,7 +16,7 @@ const TextEmotionInput = ({ value, onChange, onSubmit, isProcessing }) => {
   };
 
   return (
-    <div className="bg-card rounded-3xl p-4 md:p-5 shadow-sm border border-border space-y-2.5 h-full flex flex-col justify-center max-h-[550px]">
+    <div className="bg-card rounded-3xl p-4 md:p-5 shadow-sm border border-border space-y-2.5 flex flex-col">
       <div className="flex items-center gap-2">
         <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
           <MessageSquare className="w-4 h-4 text-primary" />
@@ -45,14 +45,14 @@ const TextEmotionInput = ({ value, onChange, onSubmit, isProcessing }) => {
         </div>
       </div>
 
-      <form onSubmit={onSubmit} className="space-y-2.5 flex flex-col">
-        <textarea 
+      <form onSubmit={onSubmit} className="space-y-2.5 mt-10">
+        <textarea
           value={value}
           onChange={onChange}
           placeholder="What's the vibe today? Type it out..."
-          className="w-full h-28 md:h-36 p-3 md:p-4 bg-muted border border-border rounded-2xl focus:ring-2 focus:ring-primary focus:bg-card transition-all outline-none text-sm resize-none"
+          className="w-full h-24 md:h-28 p-3 md:p-4 bg-muted border border-border rounded-2xl focus:ring-2 focus:ring-primary focus:bg-card transition-all outline-none text-sm resize-none"
         />
-        <button 
+        <button
           type="submit"
           disabled={isProcessing || !value.trim()}
           className="w-full py-2.5 md:py-3 bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-primary-foreground font-bold rounded-xl shadow-md shadow-primary/10 transition-all flex items-center justify-center gap-2 text-sm md:text-base"

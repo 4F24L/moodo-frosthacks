@@ -15,6 +15,7 @@ export { default as TextEmotionInput } from './dashboard/TextEmotionInput';
 export { default as VoiceRecorder } from './dashboard/VoiceRecorder';
 export { default as AnalysisPlaceholder } from './dashboard/AnalysisPlaceholder';
 export { default as AnalysisResult } from './dashboard/AnalysisResult';
+export { default as EnhancedAnalysisResult } from './dashboard/EnhancedAnalysisResult';
 // layout components
 export { default as Sidebar } from './layout/Sidebar';
 export { default as TopHeader } from './layout/TopHeader';

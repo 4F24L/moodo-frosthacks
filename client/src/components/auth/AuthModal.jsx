@@ -26,10 +26,10 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
         if (password !== confirmPassword) return;
         await register(name, email, password);
       }
-      
+
       onClose();
       onSuccess();
-      
+
       setEmail('');
       setPassword('');
       setName('');
@@ -43,7 +43,7 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -51,13 +51,13 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
             className="absolute inset-0 bg-foreground/60 backdrop-blur-sm"
           />
 
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             className="relative w-full max-w-md bg-card rounded-[2.5rem] shadow-2xl overflow-hidden"
           >
-            <button 
+            <button
               onClick={onClose}
               className="absolute right-6 top-6 p-2 hover:bg-muted rounded-full transition-colors z-10"
             >
@@ -73,15 +73,15 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
                   {isLogin ? 'Welcome back' : 'Create an account'}
                 </h2>
                 <p className="text-muted-foreground mt-2 text-sm">
-                  {isLogin 
-                    ? 'Enter your credentials to access your dashboard' 
+                  {isLogin
+                    ? 'Enter your credentials to access your dashboard'
                     : 'Join MOODO to start monitoring your emotional trends'}
                 </p>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 {error && (
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="p-3 bg-destructive/10 border border-destructive/20 rounded-xl text-destructive text-xs font-bold"
@@ -89,9 +89,9 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
                     {error}
                   </motion.div>
                 )}
-                
+
                 {!isLogin && (
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     className="space-y-2"
@@ -99,8 +99,8 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
                     <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Full Name</label>
                     <div className="relative">
                       <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         required
                         value={name}
                         onChange={(e) => setName(e.target.value)}
@@ -111,7 +111,7 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
                   </motion.div>
                 )}
 
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.1 }}
@@ -120,18 +120,18 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
                   <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Email Address</label>
                   <div className="relative">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                    <input 
-                      type="email" 
+                    <input
+                      type="email"
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="admin@sentivoice.com"
+                      placeholder="user@moodo.app"
                       className="w-full pl-12 pr-4 py-3 bg-muted/50 border border-border rounded-2xl focus:ring-2 focus:ring-primary focus:bg-card transition-all outline-none text-sm text-foreground"
                     />
                   </div>
                 </motion.div>
 
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.2 }}
@@ -147,15 +147,15 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
                   </div>
                   <div className="relative">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                    <input 
-                      type={showPassword ? "text" : "password"} 
+                    <input
+                      type={showPassword ? "text" : "password"}
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="password123"
                       className="w-full pl-12 pr-12 py-3 bg-muted/50 border border-border rounded-2xl focus:ring-2 focus:ring-primary focus:bg-card transition-all outline-none text-sm text-foreground"
                     />
-                    <button 
+                    <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
@@ -165,7 +165,7 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
                   </div>
                 </motion.div>
 
-                <motion.button 
+                <motion.button
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
@@ -189,7 +189,7 @@ const AuthModal = ({ isOpen, onClose, onSuccess }) => {
               <div className="pt-8 text-center">
                 <p className="text-muted-foreground text-xs">
                   {isLogin ? "Don't have an account?" : "Already have an account?"}{' '}
-                  <button 
+                  <button
                     onClick={() => setIsLogin(!isLogin)}
                     className="font-bold text-primary hover:text-primary/80"
                   >
