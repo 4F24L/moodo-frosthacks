@@ -8,6 +8,7 @@ import {
 import { useEffect } from "react";
 import { FluctuationItem, InsightCard, MoodChart, PageHeader, StatCard } from "../components";
 import { useMood } from "../hooks";
+import { formatDate, formatTime } from "../lib/helpers";
 
 const Trends = () => {
   const { dashboard, getDashboard } = useMood();
@@ -21,10 +22,7 @@ const Trends = () => {
   // Format data for MoodChart
   const data = rawEntries
     .map((entry) => ({
-      name: new Date(entry.createdAt).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      }),
+      name: formatDate(entry.createdAt),
       score: entry.moodScore,
     }))
     .reverse(); // Assuming backend returns newest first, chart wants chronological
@@ -73,15 +71,13 @@ const Trends = () => {
 
   // For fluctuations, ideally backend returns anomaly alerts. We'll map recent alerts or generate fallback strings.
   const fluctuations = (dashboard?.alerts || []).map((alert) => ({
-    day: new Date(alert.createdAt).toLocaleDateString("en-US", {
+    day: new Date(alert.createdAt).toLocaleDateString("en-IN", {
+      timeZone: "Asia/Kolkata",
       weekday: "long",
     }),
     change: alert.trend === "up" ? "+Anomalous" : "-Anomalous",
     trend: alert.trend || "down",
-    time: new Date(alert.createdAt).toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-    }),
+    time: formatTime(alert.createdAt),
   }));
 
   // AI Insights mapping

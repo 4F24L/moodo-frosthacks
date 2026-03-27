@@ -28,7 +28,7 @@ export const refreshToken = async (req, res, next) => {
         .json({ success: false, message: "Refresh token mismatch" });
     }
 
-    const accessToken = generateAccessToken(user._id, user.name, user.email);
+    const accessToken = generateAccessToken(user._id, user.name, user.email, user.role);
 
     res.status(200).json({
       success: true,

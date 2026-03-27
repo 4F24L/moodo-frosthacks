@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { PageHeader } from "../components";
 import { useMood } from "../hooks";
 import { cn } from "../lib/utils";
+import { formatDate, formatTime } from "../lib/helpers";
 
 const filters = [
   { label: "7 Days", value: "7d" },
@@ -121,20 +122,10 @@ const History = () => {
                         <td className="p-4 whitespace-nowrap">
                           <div className="flex flex-col">
                             <span className="font-medium text-foreground">
-                              {new Date(entry.createdAt).toLocaleDateString(
-                                "en-US",
-                                {
-                                  month: "short",
-                                  day: "2-digit",
-                                  year: "numeric",
-                                },
-                              )}
+                              {formatDate(entry.createdAt)}
                             </span>
                             <span className="text-xs text-muted-foreground">
-                              {new Date(entry.createdAt).toLocaleTimeString(
-                                "en-US",
-                                { hour: "2-digit", minute: "2-digit" },
-                              )}
+                              {formatTime(entry.createdAt)}
                             </span>
                           </div>
                         </td>

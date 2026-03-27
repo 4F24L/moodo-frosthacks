@@ -5,31 +5,53 @@
 import { MOOD_COLORS, MOOD_EMOJIS, VALIDATION, ERROR_MESSAGES } from "./constants.js";
 
 /**
- * Format date to readable string
+ * Convert UTC date to IST (Indian Standard Time, UTC+5:30)
+ */
+export const toIST = (date) => {
+  const utcDate = new Date(date);
+  // IST is UTC + 5 hours 30 minutes
+  const istOffset = 5.5 * 60 * 60 * 1000; // 5.5 hours in milliseconds
+  return new Date(utcDate.getTime() + istOffset);
+};
+
+/**
+ * Format date to readable string in IST
  */
 export const formatDate = (date) => {
-  return new Date(date).toLocaleDateString("en-US", {
+  const istDate = toIST(date);
+  return istDate.toLocaleDateString("en-IN", {
     year: "numeric",
     month: "short",
     day: "numeric",
+    timeZone: "Asia/Kolkata",
   });
 };
 
 /**
- * Format time to readable string
+ * Format time to readable string in IST
  */
 export const formatTime = (date) => {
-  return new Date(date).toLocaleTimeString("en-US", {
+  const istDate = toIST(date);
+  return istDate.toLocaleTimeString("en-IN", {
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "Asia/Kolkata",
   });
 };
 
 /**
- * Format date and time
+ * Format date and time in IST
  */
 export const formatDateTime = (date) => {
-  return `${formatDate(date)} ${formatTime(date)}`;
+  const istDate = toIST(date);
+  return istDate.toLocaleString("en-IN", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Asia/Kolkata",
+  });
 };
 
 /**
@@ -144,11 +166,12 @@ export const formatFileSize = (bytes) => {
 };
 
 /**
- * Get relative time string (e.g., "2 hours ago")
+ * Get relative time string (e.g., "2 hours ago") in IST
  */
 export const getRelativeTime = (date) => {
   const now = new Date();
-  const diff = now - new Date(date);
+  const inputDate = new Date(date);
+  const diff = now - inputDate;
   const seconds = Math.floor(diff / 1000);
   const minutes = Math.floor(seconds / 60);
   const hours = Math.floor(minutes / 60);

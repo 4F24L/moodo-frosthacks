@@ -25,6 +25,7 @@ import {
 import { motion } from 'motion/react';
 import { Patient, RiskLevel } from '../types';
 import { cn, getAnonymousId } from '../lib/utils';
+import { formatTime, formatDateTime } from '../lib/helpers';
 
 interface LivePatientProfileProps {
   patient: Patient;
@@ -40,7 +41,8 @@ export default function LivePatientProfile({ patient, onBack }: LivePatientProfi
 
   const chartData = patient.liveHistory.map((point, i) => ({
     index: i,
-    time: point.time,
+    time: formatTime(point.time),
+    rawTime: point.time,
     score: point.score
   }));
 
@@ -226,7 +228,7 @@ export default function LivePatientProfile({ patient, onBack }: LivePatientProfi
                         return (
                           <div className="bg-white p-3 border border-slate-100 shadow-xl rounded-xl">
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
-                              Time: {payload[0].payload.time}
+                              Time: {formatDateTime(payload[0].payload.rawTime)}
                             </p>
                             <p className="text-sm font-black text-orange-600">
                               Mood Score: {Number(payload[0].value).toFixed(1)}

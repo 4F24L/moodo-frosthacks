@@ -24,7 +24,7 @@ export const loginUser = async (req, res, next) => {
         .json({ success: false, message: "Invalid credentials" });
     }
 
-    const accessToken = generateAccessToken(user._id, user.name, user.email);
+    const accessToken = generateAccessToken(user._id, user.name, user.email, user.role);
     const refreshToken = generateRefreshToken(user._id);
 
     user.refreshToken = refreshToken;
@@ -32,10 +32,21 @@ export const loginUser = async (req, res, next) => {
 
     res.cookie("refreshToken", refreshToken, COOKIE_OPTIONS);
 
+    // Determine redirect based on user role
+    const redirectTo = user.role === "admin" ? "/admin/dashboard" : "/dashboard";
+
     res.status(200).json({
       success: true,
       message: "Login successful",
-      data: { accessToken },
+      data: { 
+        accessToken,
+        user: {
+          id: user._id,
+          email: user.email,
+          role: user.role
+        },
+        redirectTo
+      },
     });
   } catch (err) {
     next(err);

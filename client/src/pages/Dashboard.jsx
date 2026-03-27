@@ -7,6 +7,7 @@ import {
     TextEmotionInput,
     VoiceRecorder,
 } from "../components";
+import { formatDate } from "../lib/helpers";
 
 import { useNavigate } from "react-router-dom";
 import { useAuth, useMood } from "../hooks";
@@ -107,11 +108,7 @@ const Dashboard = () => {
       >
         <DashboardHeader
           streak={dashboard?.streak || 0}
-          date={new Date().toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-          })}
+          date={formatDate(new Date())}
         />
 
         {/* Mobile Mode Selector */}

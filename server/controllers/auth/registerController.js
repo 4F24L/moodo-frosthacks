@@ -20,7 +20,7 @@ export const registerUser = async (req, res, next) => {
     const hashedPassword = await argon2.hash(password);
     const user = await User.create({ name, email, password: hashedPassword });
 
-    const accessToken = generateAccessToken(user._id, user.name, user.email);
+    const accessToken = generateAccessToken(user._id, user.name, user.email, user.role);
     const refreshToken = generateRefreshToken(user._id);
 
     user.refreshToken = refreshToken;

@@ -10,6 +10,20 @@ interface QuickStatsProps {
 }
 
 export default function QuickStats({ totalUsers, activeUsers, averageMood, usersAtRisk }: QuickStatsProps) {
+  // Determine mood display format based on scale
+  const getMoodDisplay = (score: number) => {
+    if (score >= -1 && score <= 1) {
+      // Normalized score, convert to 1-10
+      return (((score + 1) / 2) * 9 + 1).toFixed(1);
+    } else if (score >= 1 && score <= 10) {
+      // Already on 1-10 scale
+      return score.toFixed(1);
+    } else {
+      // Unknown scale, show as percentage or raw
+      return score.toFixed(1);
+    }
+  };
+
   const stats = [
     {
       label: 'Total Users',
@@ -27,7 +41,7 @@ export default function QuickStats({ totalUsers, activeUsers, averageMood, users
     },
     {
       label: 'Avg. Mood Score',
-      value: averageMood.toFixed(1),
+      value: getMoodDisplay(averageMood),
       icon: Heart,
       color: 'text-rose-600',
       bg: 'bg-rose-50/50',

@@ -38,6 +38,9 @@ export const useAuth = () => {
     authService.isAuthenticated(),
   );
 
+  // Get user role
+  const userRole = user?.role || authService.getUserRole() || "user";
+
   // Handle unauthorized events
   useEffect(() => {
     const handleUnauthorized = () => {
@@ -115,6 +118,7 @@ export const useAuth = () => {
     loading,
     error,
     isAuthenticated,
+    userRole,
     register,
     login,
     logout,
