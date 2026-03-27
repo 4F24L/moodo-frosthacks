@@ -6,10 +6,11 @@ const Footer = () => {
     <footer className="bg-card border-t border-border py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-4">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 bg-primary rounded flex items-center justify-center">
-            <Mic className="text-primary-foreground w-4 h-4" />
-          </div>
-          <span className="font-bold font-display text-foreground">MOODO</span>
+          <img 
+          src="/logo1.png" 
+          alt="Logo"
+          className="w-40"
+        />
         </div>
         <p className="text-xs text-muted-foreground font-medium">
           © 2026 MOODO AI. All rights reserved. Privacy First Emotional Monitoring.
