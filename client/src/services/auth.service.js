@@ -25,9 +25,17 @@ export const authService = {
     apiClient.post("/auth/login", { email, password }),
 
   /**
-   * Logout user (client-side)
+   * Logout user (client-side and server-side)
    */
-  logout: () => {
+  logout: async () => {
+    try {
+      await apiClient.post("/auth/logout", {});
+    } catch (error) {
+      console.warn(
+        "Logout request failed, proceeding with local clear:",
+        error,
+      );
+    }
     apiClient.clearAuth();
   },
 
@@ -51,4 +59,9 @@ export const authService = {
   isAuthenticated: () => {
     return !!apiClient.getToken();
   },
+
+  /**
+   * Get current user
+   */
+  getMe: () => apiClient.get("/auth/me"),
 };

@@ -1,5 +1,5 @@
-import * as moodService from "../services/mood.service.js";
 import * as alertService from "../services/alert.service.js";
+import * as moodService from "../services/mood.service.js";
 
 /**
  * POST /mood/analyze
@@ -9,7 +9,11 @@ export const analyzeMood = async (req, res, next) => {
   try {
     const { features, text } = req.body;
 
-    const moodEntry = await moodService.createMoodEntry(req.user._id, features, text);
+    const moodEntry = await moodService.createMoodEntry(
+      req.user._id,
+      features,
+      text,
+    );
 
     // Check for alerts
     const entries = await moodService.getMoodHistory(req.user._id, 7, 10);
@@ -19,6 +23,7 @@ export const analyzeMood = async (req, res, next) => {
       success: true,
       data: {
         text: moodEntry.text,
+        source: moodEntry.source,
         mood_score: moodEntry.moodScore,
         normalized_score: moodEntry.normalizedScore,
         mood_label: moodEntry.moodLabel,
@@ -27,7 +32,9 @@ export const analyzeMood = async (req, res, next) => {
         features: moodEntry.features,
         sentiment: moodEntry.sentiment,
         timestamp: moodEntry.timestamp,
-        alert: alert ? { id: alert._id, type: alert.type, message: alert.message } : null,
+        alert: alert
+          ? { id: alert._id, type: alert.type, message: alert.message }
+          : null,
       },
     });
   } catch (err) {

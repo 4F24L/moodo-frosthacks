@@ -2,7 +2,7 @@
  * useMood Hook - Mood analysis state management
  */
 
-import { useState, useCallback } from "react";
+import { useCallback, useState } from "react";
 import { moodService } from "../services";
 
 export const useMood = () => {
@@ -18,11 +18,13 @@ export const useMood = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await moodService.processAudio(audioFile, text);
+      const res = await moodService.processAudio(audioFile, text);
+      const response = res.data || res;
       setMoodData(response);
       return response;
     } catch (err) {
-      const message = err.data?.message || err.message || "Failed to process audio";
+      const message =
+        err.data?.message || err.message || "Failed to process audio";
       setError(message);
       throw err;
     } finally {
@@ -38,7 +40,8 @@ export const useMood = () => {
       setMoodData(response);
       return response;
     } catch (err) {
-      const message = err.data?.message || err.message || "Failed to analyze mood";
+      const message =
+        err.data?.message || err.message || "Failed to analyze mood";
       setError(message);
       throw err;
     } finally {
@@ -51,10 +54,12 @@ export const useMood = () => {
     setError(null);
     try {
       const response = await moodService.getHistory(range, limit);
-      setHistory(response);
-      return response;
+      const data = response.data || response;
+      setHistory(data);
+      return data;
     } catch (err) {
-      const message = err.data?.message || err.message || "Failed to fetch history";
+      const message =
+        err.data?.message || err.message || "Failed to fetch history";
       setError(message);
       throw err;
     } finally {
@@ -70,7 +75,8 @@ export const useMood = () => {
       setMoodData(response);
       return response;
     } catch (err) {
-      const message = err.data?.message || err.message || "Failed to fetch latest mood";
+      const message =
+        err.data?.message || err.message || "Failed to fetch latest mood";
       setError(message);
       throw err;
     } finally {
@@ -86,7 +92,8 @@ export const useMood = () => {
       setTrend(response);
       return response;
     } catch (err) {
-      const message = err.data?.message || err.message || "Failed to fetch trend";
+      const message =
+        err.data?.message || err.message || "Failed to fetch trend";
       setError(message);
       throw err;
     } finally {
@@ -103,7 +110,8 @@ export const useMood = () => {
       setDashboard(data);
       return data;
     } catch (err) {
-      const message = err.data?.message || err.message || "Failed to fetch dashboard";
+      const message =
+        err.data?.message || err.message || "Failed to fetch dashboard";
       setError(message);
       throw err;
     } finally {
@@ -120,7 +128,8 @@ export const useMood = () => {
       setStreak(data.streak);
       return data;
     } catch (err) {
-      const message = err.data?.message || err.message || "Failed to fetch streak";
+      const message =
+        err.data?.message || err.message || "Failed to fetch streak";
       setError(message);
       throw err;
     } finally {

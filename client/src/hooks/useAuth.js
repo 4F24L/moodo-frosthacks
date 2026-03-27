@@ -2,17 +2,23 @@
  * useAuth Hook - Authentication state management
  */
 
-import { useState, useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { authService } from "../services";
 
 const decodeToken = (token) => {
   try {
     if (!token) return null;
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
-        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-    }).join(''));
+    const base64Url = token.split(".")[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      window
+        .atob(base64)
+        .split("")
+        .map(function (c) {
+          return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+        })
+        .join(""),
+    );
     return JSON.parse(jsonPayload);
   } catch (e) {
     console.error("Failed to decode token", e);
@@ -25,11 +31,11 @@ export const useAuth = () => {
     const token = authService.getToken();
     return decodeToken(token);
   });
-  
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(
-    authService.isAuthenticated()
+    authService.isAuthenticated(),
   );
 
   // Handle unauthorized events
@@ -82,12 +88,26 @@ export const useAuth = () => {
     }
   }, []);
 
-  const logout = useCallback(() => {
-    authService.logout();
+  const logout = useCallback(async () => {
+    await authService.logout();
     setUser(null);
     setIsAuthenticated(false);
     setError(null);
   }, []);
+
+  const fetchUser = useCallback(async () => {
+    if (!isAuthenticated) return null;
+    try {
+      const response = await authService.getMe();
+      const userData = response.data || response;
+      setUser((prev) => ({ ...prev, ...userData }));
+      return userData;
+    } catch (err) {
+      console.warn("Failed to fetch user, token might be invalid", err);
+      // Optional: handle auth error, trigger logout etc.
+      return null;
+    }
+  }, [isAuthenticated]);
 
   return {
     user,
@@ -98,5 +118,6 @@ export const useAuth = () => {
     register,
     login,
     logout,
+    fetchUser,
   };
 };
