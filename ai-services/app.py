@@ -212,11 +212,19 @@ def generate_insight(features, sentiment_score):
 @app.route('/health', methods=['GET'])
 def health():
     """Health check endpoint for service monitoring"""
-    return jsonify({
-        "status": "ready",
-        "service": "ai-analysis",
-        "timestamp": datetime.utcnow().isoformat()
-    }), 200
+    try:
+        # Quick health check - just verify service is responsive
+        return jsonify({
+            "status": "healthy",
+            "service": "ai-analysis",
+            "timestamp": datetime.utcnow().isoformat()
+        }), 200
+    except Exception as e:
+        return jsonify({
+            "status": "unhealthy",
+            "error": str(e),
+            "timestamp": datetime.utcnow().isoformat()
+        }), 500
 
 
 # 🔥 Warmup Endpoint

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   AuthNavbar,
   AuthFooter,
@@ -13,6 +13,78 @@ import {
 
 const Landing = ({ onLogin }) => {
   const [showAuthModal, setShowAuthModal] = useState(false);
+
+  // Warmup both backend and AI services when landing page loads
+  useEffect(() => {
+    const warmupServices = async () => {
+      console.log('Warmup: Starting service warmup...');
+      
+      // Check if already warmed this session
+      if (sessionStorage.getItem('services_warmed')) {
+        console.log('Warmup: Services already warmed this session');
+        return;
+      }
+      
+      const warmupPromises = [];
+
+      // Warmup backend API health endpoint
+      const API_URL = import.meta.env.VITE_API_URL;
+      console.log('Warmup: API_URL =', API_URL);
+      
+      if (API_URL) {
+        const backendUrl = API_URL.replace('/api', '') + '/api/health';
+        console.log('Warmup: Calling backend health at', backendUrl);
+        
+        warmupPromises.push(
+          fetch(backendUrl, { 
+            method: 'GET',
+            signal: AbortSignal.timeout(5000)
+          })
+          .then(res => {
+            console.log('Warmup: Backend health response:', res.status);
+            return res;
+          })
+          .catch(err => console.log('Warmup: Backend health failed:', err.message))
+        );
+      }
+
+      // Warmup AI service health endpoint
+      const AI_URL = import.meta.env.VITE_AI_SERVICE_URL;
+      console.log('Warmup: AI_URL =', AI_URL);
+      
+      if (AI_URL) {
+        const aiHealthUrl = AI_URL + '/health';
+        console.log('Warmup: Calling AI health at', aiHealthUrl);
+        
+        warmupPromises.push(
+          fetch(aiHealthUrl, { 
+            method: 'GET',
+            signal: AbortSignal.timeout(5000)
+          })
+          .then(res => {
+            console.log('Warmup: AI health response:', res.status);
+            return res;
+          })
+          .catch(err => console.log('Warmup: AI health failed:', err.message))
+        );
+      }
+
+      // Execute both warmup calls in parallel
+      if (warmupPromises.length > 0) {
+        console.log('Warmup: Executing', warmupPromises.length, 'warmup calls...');
+        await Promise.allSettled(warmupPromises);
+        sessionStorage.setItem('services_warmed', 'true');
+        console.log('Warmup: All services warmed successfully');
+      } else {
+        console.log('Warmup: No services to warm up');
+      }
+    };
+    
+    // Delay slightly to not block initial render
+    console.log('Warmup: Setting up warmup timer...');
+    const timer = setTimeout(warmupServices, 1000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleOpenModal = () => {
     setShowAuthModal(true);

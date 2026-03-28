@@ -12,58 +12,6 @@ export default function App() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Warmup backend and AI services on app load to prevent cold starts
-  useEffect(() => {
-    const warmupServices = async () => {
-      // Check if already warmed this session
-      if (sessionStorage.getItem('services_warmed')) return;
-      
-      const warmupPromises = [];
-
-      // Warmup backend API
-      try {
-        const API_URL = import.meta.env.VITE_API_URL;
-        if (API_URL) {
-          warmupPromises.push(
-            fetch(`${API_URL}/api/warmup`, { 
-              method: 'GET',
-              signal: AbortSignal.timeout(5000)
-            }).then(() => console.debug('Backend API warmed successfully'))
-              .catch(err => console.debug('Backend warmup skipped:', err.message))
-          );
-        }
-      } catch (error) {
-        console.debug('Backend warmup error:', error.message);
-      }
-
-      // Warmup AI service
-      try {
-        const AI_URL = import.meta.env.VITE_AI_SERVICE_URL;
-        if (AI_URL) {
-          warmupPromises.push(
-            fetch(`${AI_URL}/warmup`, { 
-              method: 'GET',
-              signal: AbortSignal.timeout(5000)
-            }).then(() => console.debug('AI service warmed successfully'))
-              .catch(err => console.debug('AI warmup skipped:', err.message))
-          );
-        }
-      } catch (error) {
-        console.debug('AI warmup error:', error.message);
-      }
-
-      // Execute all warmup calls in parallel
-      if (warmupPromises.length > 0) {
-        await Promise.allSettled(warmupPromises);
-        sessionStorage.setItem('services_warmed', 'true');
-      }
-    };
-    
-    // Delay slightly to not block initial render
-    const timer = setTimeout(warmupServices, 1500);
-    return () => clearTimeout(timer);
-  }, []);
-
   // Redirect based on role after authentication
   useEffect(() => {
     if (isAuthenticated && location.pathname === "/") {
